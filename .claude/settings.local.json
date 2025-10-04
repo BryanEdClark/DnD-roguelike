@@ -22,7 +22,8 @@
       "Bash(pkill:*)",
       "WebFetch(domain:www.dnd5eapi.co)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Read(//c/**)"
     ],
     "deny": [],
     "ask": []

@@ -295,6 +295,110 @@ app.delete('/api/accounts/:name', async (req, res) => {
     }
 });
 
+// Save dice configurations
+app.post('/api/save-dice-configs', async (req, res) => {
+    try {
+        const { accountName, diceConfigs } = req.body;
+
+        if (!accountName) {
+            return res.status(400).json({ error: 'Account name is required' });
+        }
+
+        const accounts = await loadAccounts();
+        const account = accounts.find(acc => acc.name === accountName);
+
+        if (!account) {
+            return res.status(404).json({ error: 'Account not found' });
+        }
+
+        // Save dice configurations to account data
+        if (!account.data) {
+            account.data = {};
+        }
+        account.data.diceConfigs = diceConfigs;
+
+        await saveAccounts(accounts);
+        res.json({ message: 'Dice configurations saved successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get dice configurations
+app.get('/api/get-dice-configs', async (req, res) => {
+    try {
+        const { accountName } = req.query;
+
+        if (!accountName) {
+            return res.status(400).json({ error: 'Account name is required' });
+        }
+
+        const accounts = await loadAccounts();
+        const account = accounts.find(acc => acc.name === accountName);
+
+        if (!account) {
+            return res.status(404).json({ error: 'Account not found' });
+        }
+
+        const diceConfigs = account.data?.diceConfigs || [];
+        res.json({ diceConfigs });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Save encounters
+app.post('/api/save-encounters', async (req, res) => {
+    try {
+        const { accountName, encounters } = req.body;
+
+        if (!accountName) {
+            return res.status(400).json({ error: 'Account name is required' });
+        }
+
+        const accounts = await loadAccounts();
+        const account = accounts.find(acc => acc.name === accountName);
+
+        if (!account) {
+            return res.status(404).json({ error: 'Account not found' });
+        }
+
+        // Save encounters to account data
+        if (!account.data) {
+            account.data = {};
+        }
+        account.data.encounters = encounters;
+
+        await saveAccounts(accounts);
+        res.json({ message: 'Encounters saved successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get encounters
+app.get('/api/get-encounters', async (req, res) => {
+    try {
+        const { accountName } = req.query;
+
+        if (!accountName) {
+            return res.status(400).json({ error: 'Account name is required' });
+        }
+
+        const accounts = await loadAccounts();
+        const account = accounts.find(acc => acc.name === accountName);
+
+        if (!account) {
+            return res.status(404).json({ error: 'Account not found' });
+        }
+
+        const encounters = account.data?.encounters || [];
+        res.json({ encounters });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Start server
 async function startServer() {
     await loadMonstersCache();

@@ -1,0 +1,14 @@
+finish character sheets
+spell slots
+tie counters to character
+prepopulate characters weapons
+inventory
+improve weapons
+dice roller
+save encounters
+choose monsters and save encounter
+currency
+auto populate on level
+dice roller
+
+roguelike arena
