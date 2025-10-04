@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D Play Tools</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="logo-header">
+                <img src="trogdor.png" alt="Trogdor" class="trogdor-logo">
+                <h1>D&D Play Tools</h1>
+            </div>
+            <p class="login-subtitle">Welcome adventurer!</p>
+
+            <div class="login-buttons">
+                <button class="login-btn" onclick="showLoginModal()">Login</button>
+                <button class="login-btn signup-btn" onclick="showSignupModal()">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Login</h2>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="loginAccountName">Account Name</label>
+                    <input type="text" id="loginAccountName" placeholder="Enter account name" />
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password (if required)</label>
+                    <input type="password" id="loginPassword" placeholder="Leave blank if no password" />
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" onclick="closeLoginModal()">Cancel</button>
+                    <button class="modal-btn confirm-btn" onclick="attemptLogin()">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Create Account</h2>
+                <button class="modal-close" onclick="closeSignupModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="signupAccountName">Account Name</label>
+                    <input type="text" id="signupAccountName" placeholder="Enter account name" />
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password (Optional)</label>
+                    <input type="password" id="signupPassword" placeholder="Leave blank for no password" />
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" onclick="closeSignupModal()">Cancel</button>
+                    <button class="modal-btn confirm-btn" onclick="createAccount()">Create Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Page -->
+    <div id="adminPage" class="container" style="display: none;">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1>🔐 Admin Panel</h1>
+                    <p class="subtitle">Account Management</p>
+                </div>
+                <div class="user-info">
+                    <span class="current-user">Admin</span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="admin-container">
+            <div class="admin-header">
+                <h2>Manage Accounts</h2>
+                <button class="admin-refresh-btn" onclick="renderAdminAccounts()">🔄 Refresh</button>
+            </div>
+
+            <div class="admin-accounts-list" id="adminAccountsList">
+                <p class="no-accounts">Loading accounts...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="mainApp" style="display: none;">
+        <header>
+            <div class="header-content">
+                <div>
+                    <div class="logo-header">
+                        <img src="trogdor.png" alt="Trogdor" class="trogdor-logo">
+                        <h1>D&D Play Tools</h1>
+                    </div>
+                    <p class="subtitle">Fine I'll make my own tools!</p>
+                </div>
+                <div class="user-info">
+                    <span class="current-user" id="currentUser"></span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('dmtools')">DM Tools</button>
+            <button class="tab-button" onclick="switchTab('playertools')">Player Tools</button>
+        </div>
+
+        <!-- DM Tools Section -->
+        <div id="dmtoolsTab" class="tab-content active">
+            <div class="section-tabs">
+                <button class="section-tab-button active" onclick="switchSection('encounter')">Encounter Generator</button>
+                <button class="section-tab-button" onclick="switchSection('browser')">Monster Browser</button>
+            </div>
+
+        <!-- Encounter Generator Tab -->
+        <div id="encounterTab" class="tab-content active">
+            <div class="encounter-generator">
+                <h2>⚔️ Generate Encounter</h2>
+
+                <div class="generator-controls">
+                    <div class="input-group">
+                        <label for="partyLevel">Party Level</label>
+                        <input type="number" id="partyLevel" min="1" max="20" value="1" />
+                    </div>
+
+                    <div class="input-group">
+                        <label for="partySize">Party Size</label>
+                        <input type="number" id="partySize" min="1" max="8" value="4" />
+                    </div>
+
+                    <div class="input-group difficulty-group">
+                        <label for="difficulty">Difficulty</label>
+                        <div class="difficulty-slider-container">
+                            <input type="range" id="difficulty" min="0" max="4" value="1" step="1" />
+                            <div class="difficulty-labels">
+                                <span>Easy</span>
+                                <span>Medium</span>
+                                <span>Hard</span>
+                                <span>Very Hard</span>
+                                <span>You Gonna Die</span>
+                            </div>
+                            <div class="difficulty-indicator" id="difficultyIndicator">Medium</div>
+                        </div>
+                    </div>
+
+                    <div class="input-group difficulty-group">
+                        <label for="monsterCount">Number of Monsters</label>
+                        <div class="difficulty-slider-container">
+                            <input type="range" id="monsterCount" min="0" max="5" value="0" step="1" />
+                            <div class="difficulty-labels">
+                                <span>Auto</span>
+                                <span>1</span>
+                                <span>2</span>
+                                <span>3</span>
+                                <span>4</span>
+                                <span>5</span>
+                            </div>
+                            <div class="difficulty-indicator" id="monsterCountIndicator">Auto</div>
+                        </div>
+                    </div>
+
+                    <button class="generate-btn" onclick="generateEncounter()">Generate Encounter</button>
+                </div>
+
+                <div id="encounterResult" class="encounter-result"></div>
+            </div>
+        </div>
+
+        <!-- Monster Browser Tab -->
+        <div id="browserTab" class="tab-content">
+            <div class="controls">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search monsters..." />
+                </div>
+                <div class="filter-box">
+                    <label for="crFilter">Filter by CR:</label>
+                    <select id="crFilter">
+                        <option value="">All CRs</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="content">
+                <aside class="monster-list">
+                    <h2>Monsters</h2>
+                    <div id="monsterListContainer"></div>
+                </aside>
+
+                <main class="monster-display">
+                    <div id="monsterDetail" class="monster-detail-empty">
+                        <p>Select a monster to view details</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+        </div>
+
+        <!-- Player Tools Section -->
+        <div id="playertoolsTab" class="tab-content">
+            <div class="section-tabs">
+                <button class="section-tab-button active" onclick="switchPlayerSection('character')">Character Sheet</button>
+                <button class="section-tab-button" onclick="switchPlayerSection('counters')">Counters</button>
+            </div>
+
+            <div id="characterSection" class="player-section active">
+            <div class="character-sheet">
+                <div class="character-sheet-header">
+                    <h2>📜 Character Sheet</h2>
+                    <div class="character-selector">
+                        <select id="characterSelect" onchange="switchCharacter()">
+                            <option value="0">Character 1</option>
+                        </select>
+                        <button class="char-add-btn" onclick="addNewCharacter()">+ New Character</button>
+                        <button class="char-delete-btn" onclick="deleteCharacter()">Delete</button>
+                    </div>
+                </div>
+
+                <!-- Character Header -->
+                <div class="char-header">
+                    <div class="char-header-row">
+                        <div class="input-group char-input-box">
+                            <label>Character Name</label>
+                            <input type="text" id="charName" placeholder="Enter name" />
+                        </div>
+                        <div class="input-group char-input-box">
+                            <label>Class</label>
+                            <select id="charClass">
+                                <option value="">Select Class</option>
+                                <option value="Barbarian">Barbarian</option>
+                                <option value="Bard">Bard</option>
+                                <option value="Cleric">Cleric</option>
+                                <option value="Druid">Druid</option>
+                                <option value="Fighter">Fighter</option>
+                                <option value="Monk">Monk</option>
+                                <option value="Paladin">Paladin</option>
+                                <option value="Ranger">Ranger</option>
+                                <option value="Rogue">Rogue</option>
+                                <option value="Sorcerer">Sorcerer</option>
+                                <option value="Warlock">Warlock</option>
+                                <option value="Wizard">Wizard</option>
+                            </select>
+                        </div>
+                        <div class="input-group char-input-box">
+                            <label>Subclass</label>
+                            <select id="charSubclass">
+                                <option value="">Select subclass</option>
+                            </select>
+                        </div>
+                        <div class="input-group char-input-box">
+                            <label>Level</label>
+                            <input type="number" id="charLevel" min="1" max="20" value="1" />
+                        </div>
+                        <div class="input-group char-input-box">
+                            <label>Background</label>
+                            <input type="text" id="charBackground" placeholder="Enter background" />
+                        </div>
+                        <div class="input-group char-input-box">
+                            <label>Species</label>
+                            <input type="text" id="charSpecies" placeholder="Enter species" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Stats Section -->
+                <div class="char-main">
+                    <!-- Ability Scores -->
+                    <div class="char-abilities">
+                        <h3>Ability Scores</h3>
+                        <div class="ability-grid">
+                            <div class="ability-score">
+                                <label>STR</label>
+                                <input type="number" id="str" value="10" min="1" max="30" />
+                                <div class="modifier" id="strMod">+0</div>
+                            </div>
+                            <div class="ability-score">
+                                <label>DEX</label>
+                                <input type="number" id="dex" value="10" min="1" max="30" />
+                                <div class="modifier" id="dexMod">+0</div>
+                            </div>
+                            <div class="ability-score">
+                                <label>CON</label>
+                                <input type="number" id="con" value="10" min="1" max="30" />
+                                <div class="modifier" id="conMod">+0</div>
+                            </div>
+                            <div class="ability-score">
+                                <label>INT</label>
+                                <input type="number" id="int" value="10" min="1" max="30" />
+                                <div class="modifier" id="intMod">+0</div>
+                            </div>
+                            <div class="ability-score">
+                                <label>WIS</label>
+                                <input type="number" id="wis" value="10" min="1" max="30" />
+                                <div class="modifier" id="wisMod">+0</div>
+                            </div>
+                            <div class="ability-score">
+                                <label>CHA</label>
+                                <input type="number" id="cha" value="10" min="1" max="30" />
+                                <div class="modifier" id="chaMod">+0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Combat Stats -->
+                    <div class="char-combat">
+                        <div class="combat-stat">
+                            <label>Armor Class</label>
+                            <input type="number" id="ac" value="10" min="1" />
+                        </div>
+                        <div class="combat-stat">
+                            <label>Initiative</label>
+                            <input type="text" id="initiative" value="+0" readonly />
+                        </div>
+                        <div class="combat-stat">
+                            <label>Speed</label>
+                            <input type="number" id="speed" value="30" />
+                        </div>
+                        <div class="combat-stat">
+                            <label>Hit Point Max</label>
+                            <input type="number" id="hpMax" value="10" min="1" />
+                        </div>
+                        <div class="combat-stat">
+                            <label>Current HP</label>
+                            <input type="number" id="hpCurrent" value="10" min="0" />
+                        </div>
+                        <div class="combat-stat">
+                            <label>Temp HP</label>
+                            <input type="number" id="hpTemp" value="0" min="0" />
+                        </div>
+                        <div class="combat-stat">
+                            <label>Hit Dice</label>
+                            <input type="text" id="hitDice" placeholder="e.g., 1d10" />
+                        </div>
+                        <div class="combat-stat">
+                            <label>Proficiency Bonus</label>
+                            <input type="number" id="profBonus" value="2" min="2" max="6" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills Section -->
+                <div class="char-skills">
+                    <h3>Skills</h3>
+                    <div class="skills-by-ability">
+                        <div class="skill-group">
+                            <h4>Strength</h4>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillAthletics" />
+                                <label for="skillAthletics">Athletics</label>
+                                <span class="skill-bonus" id="bonusAthletics">+0</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <h4>Dexterity</h4>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillAcrobatics" />
+                                <label for="skillAcrobatics">Acrobatics</label>
+                                <span class="skill-bonus" id="bonusAcrobatics">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillSleightOfHand" />
+                                <label for="skillSleightOfHand">Sleight of Hand</label>
+                                <span class="skill-bonus" id="bonusSleightOfHand">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillStealth" />
+                                <label for="skillStealth">Stealth</label>
+                                <span class="skill-bonus" id="bonusStealth">+0</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <h4>Intelligence</h4>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillArcana" />
+                                <label for="skillArcana">Arcana</label>
+                                <span class="skill-bonus" id="bonusArcana">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillHistory" />
+                                <label for="skillHistory">History</label>
+                                <span class="skill-bonus" id="bonusHistory">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillInvestigation" />
+                                <label for="skillInvestigation">Investigation</label>
+                                <span class="skill-bonus" id="bonusInvestigation">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillNature" />
+                                <label for="skillNature">Nature</label>
+                                <span class="skill-bonus" id="bonusNature">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillReligion" />
+                                <label for="skillReligion">Religion</label>
+                                <span class="skill-bonus" id="bonusReligion">+0</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <h4>Wisdom</h4>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillAnimalHandling" />
+                                <label for="skillAnimalHandling">Animal Handling</label>
+                                <span class="skill-bonus" id="bonusAnimalHandling">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillInsight" />
+                                <label for="skillInsight">Insight</label>
+                                <span class="skill-bonus" id="bonusInsight">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillMedicine" />
+                                <label for="skillMedicine">Medicine</label>
+                                <span class="skill-bonus" id="bonusMedicine">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillPerception" />
+                                <label for="skillPerception">Perception</label>
+                                <span class="skill-bonus" id="bonusPerception">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillSurvival" />
+                                <label for="skillSurvival">Survival</label>
+                                <span class="skill-bonus" id="bonusSurvival">+0</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <h4>Charisma</h4>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillDeception" />
+                                <label for="skillDeception">Deception</label>
+                                <span class="skill-bonus" id="bonusDeception">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillIntimidation" />
+                                <label for="skillIntimidation">Intimidation</label>
+                                <span class="skill-bonus" id="bonusIntimidation">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillPerformance" />
+                                <label for="skillPerformance">Performance</label>
+                                <span class="skill-bonus" id="bonusPerformance">+0</span>
+                            </div>
+                            <div class="skill-item">
+                                <input type="checkbox" id="skillPersuasion" />
+                                <label for="skillPersuasion">Persuasion</label>
+                                <span class="skill-bonus" id="bonusPersuasion">+0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Equipment & Notes -->
+                <div class="char-bottom">
+                    <div class="char-equipment">
+                        <h3>Equipment & Weapons</h3>
+                        <textarea id="equipment" rows="8" placeholder="List your equipment, weapons, and armor here..."></textarea>
+                    </div>
+                    <div class="char-notes">
+                        <h3>Features & Traits</h3>
+                        <textarea id="features" rows="8" placeholder="List your class features, racial traits, etc..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Feats Section -->
+                <div class="char-feats">
+                    <h3>Feats</h3>
+                    <div class="feats-controls">
+                        <button class="feat-add-btn" onclick="openFeatSelector()">+ Add Feat</button>
+                    </div>
+                    <div id="selectedFeats" class="selected-feats">
+                        <p class="no-feats">No feats selected. Click "Add Feat" to browse available feats.</p>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div id="countersSection" class="player-section">
+                <div class="counters-container">
+                    <h2>🎲 Counters</h2>
+                    <p class="counters-subtitle">Track spell slots, class resources, and other limited-use abilities</p>
+
+                    <div class="counter-add-controls">
+                        <button class="counter-add-btn" onclick="addCounter()">+ Add Counter</button>
+                        <button class="counter-reset-all-btn" onclick="resetAllCounters()" id="resetAllBtn" style="display: none;">Reset All to Max</button>
+                    </div>
+
+                    <div id="countersList" class="counters-list">
+                        <p class="no-counters">No counters yet. Click "Add Counter" to create one.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Counter Modal -->
+            <div id="addCounterModal" class="modal">
+                <div class="modal-content small-modal">
+                    <div class="modal-header">
+                        <h2>Add Counter</h2>
+                        <button class="modal-close" onclick="closeAddCounterModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="counterName">Counter Name</label>
+                            <input type="text" id="counterName" placeholder="e.g., Spell Slots - Level 1, Rage Uses" />
+                        </div>
+                        <div class="form-group">
+                            <label for="counterMax">Maximum Value</label>
+                            <input type="number" id="counterMax" min="1" value="3" />
+                        </div>
+                        <div class="modal-actions">
+                            <button class="modal-btn cancel-btn" onclick="closeAddCounterModal()">Cancel</button>
+                            <button class="modal-btn confirm-btn" onclick="confirmAddCounter()">Add Counter</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Counter Confirmation Modal -->
+            <div id="deleteCounterModal" class="modal">
+                <div class="modal-content small-modal">
+                    <div class="modal-header">
+                        <h2>Delete Counter</h2>
+                        <button class="modal-close" onclick="closeDeleteCounterModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="color: var(--text); margin-bottom: 20px;">Are you sure you want to delete this counter?</p>
+                        <div class="modal-actions">
+                            <button class="modal-btn cancel-btn" onclick="closeDeleteCounterModal()">Cancel</button>
+                            <button class="modal-btn confirm-btn delete-confirm-btn" onclick="confirmDeleteCounter()">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feat Selector Modal -->
+            <div id="featModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Select Feat</h2>
+                        <button class="modal-close" onclick="closeFeatSelector()">&times;</button>
+                    </div>
+                    <div class="modal-tabs">
+                        <button class="modal-tab-btn" onclick="switchFeatTab('origin')">Origin Feats</button>
+                        <button class="modal-tab-btn active" onclick="switchFeatTab('general')">General Feats</button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="originFeatsTab" class="feat-tab-content">
+                            <div id="originFeatsList" class="feats-list"></div>
+                        </div>
+                        <div id="generalFeatsTab" class="feat-tab-content active">
+                            <div id="generalFeatsList" class="feats-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Delete Account Confirmation Modal -->
+    <div id="adminDeleteModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Delete Account</h2>
+                <button class="modal-close" onclick="closeAdminDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text); margin-bottom: 20px;">Are you sure you want to delete this account? This action cannot be undone.</p>
+                <p id="adminDeleteAccountName" style="color: var(--secondary); font-weight: 600; margin-bottom: 20px;"></p>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" onclick="closeAdminDeleteModal()">Cancel</button>
+                    <button class="modal-btn confirm-btn delete-confirm-btn" onclick="confirmAdminDelete()">Delete Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Not Found Modal -->
+    <div id="accountNotFoundModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Account Not Found</h2>
+                <button class="modal-close" onclick="closeAccountNotFoundModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text); margin-bottom: 20px; text-align: center;">The account "<span id="accountNotFoundName" style="color: var(--secondary); font-weight: 600;"></span>" doesn't exist.</p>
+                <p style="color: var(--text-dim); margin-bottom: 20px; text-align: center;">Would you like to create a new account?</p>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" onclick="closeAccountNotFoundModal()">Cancel</button>
+                    <button class="modal-btn confirm-btn" onclick="goToSignup()">Create Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incorrect Password Modal -->
+    <div id="incorrectPasswordModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Incorrect Password</h2>
+                <button class="modal-close" onclick="closeIncorrectPasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text); margin-bottom: 20px; text-align: center;">The password you entered is incorrect.</p>
+                <p style="color: var(--text-dim); margin-bottom: 20px; text-align: center;">Please try again.</p>
+                <div class="modal-actions">
+                    <button class="modal-btn confirm-btn" onclick="closeIncorrectPasswordModal()">Try Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bender-footer">
+        <p class="bender-text" onclick="showBender()">The Blackjack and Hookers</p>
+    </footer>
+
+    <!-- Bender Overlay -->
+    <div id="benderOverlay" class="bender-overlay" onclick="hideBender()">
+        <img src="bender.png" alt="Bender" class="bender-full-image">
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
