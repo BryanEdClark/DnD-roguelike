@@ -728,7 +728,7 @@ const subspecies = {
     Dwarf: ['Hill Dwarf', 'Mountain Dwarf', 'Duergar'],
     Elf: ['High Elf', 'Wood Elf', 'Dark Elf (Drow)', 'Eladrin', 'Sea Elf'],
     Gnome: ['Forest Gnome', 'Rock Gnome', 'Deep Gnome (Svirfneblin)'],
-    Goliath: [],
+    Goliath: ['Cloud Giant', 'Fire Giant', 'Frost Giant', 'Hill Giant', 'Stone Giant', 'Storm Giant'],
     'Half-Elf': [],
     Halfling: ['Lightfoot', 'Stout'],
     Human: [],
@@ -2285,7 +2285,8 @@ const classTraitsByLevel = {
         1: [{ name: 'Martial Arts', notes: 'Use DEX instead of STR for unarmed strikes and monk weapons. Unarmed damage = 1d6. When you use Attack action with unarmed or monk weapon, make one unarmed strike as bonus action.' },
             { name: 'Unarmored Defense', notes: 'AC = 10 + DEX + WIS when not wearing armor or shield.' }],
         2: [{ name: 'Ki', notes: 'You have ki points = monk level. Spend ki to use Flurry of Blows, Patient Defense, or Step of the Wind. Regain on short/long rest.' },
-            { name: 'Uncanny Metabolism', notes: 'At end of turn, if bloodied (half HP or less), regain ki points = proficiency bonus. Once per long rest.' }],
+            { name: 'Uncanny Metabolism', notes: 'At end of turn, if bloodied (half HP or less), regain ki points = proficiency bonus. Once per long rest.' },
+            { name: 'Unarmored Movement', notes: 'Speed increases while not wearing armor or wielding a shield: +10ft (level 2), +15ft (level 6), +20ft (level 10), +25ft (level 14), +30ft (level 18).' }],
         3: [{ name: 'Deflect Attacks', notes: 'Use reaction to reduce damage from attack by 1d10 + DEX + monk level. If reduced to 0, spend 1 ki to redirect at attacker (melee) or another target (ranged).' }],
         4: [{ name: 'Slow Fall', notes: 'Use reaction when falling to reduce fall damage by 5× monk level.' }],
         5: [{ name: 'Extra Attack', notes: 'Attack twice when you take the Attack action.' },
@@ -2422,6 +2423,75 @@ const speciesTraits = {
         { name: 'Darkvision', notes: 'See in dim light within 60 feet as if bright light, darkness as dim light.' },
         { name: 'Fiendish Legacy', notes: 'Choose a fiendish lineage determining your resistance and spells.' },
         { name: 'Otherworldly Presence', notes: 'Know Thaumaturgy cantrip. Starting at 3rd level, cast spells based on your lineage. CHA is spellcasting ability.' }
+    ],
+    Goliath: [
+        { name: 'Giant Ancestry', notes: 'Choose one giant ancestry: Cloud, Fire, Frost, Hill, Stone, or Storm. You gain a supernatural gift usable proficiency bonus times per long rest.' },
+        { name: 'Large Form (Level 5+)', notes: 'At 5th level, as a bonus action, you can change your size to Large if there is enough space. Lasts 10 minutes. Can use proficiency bonus times per long rest.' },
+        { name: 'Powerful Build', notes: 'Count as one size larger when determining carrying capacity and weight you can push, drag, or lift.' }
+    ],
+    'Goliath (Cloud Giant)': [
+        { name: 'Cloud\'s Jaunt', notes: 'As a bonus action, magically teleport up to 30 feet to an unoccupied space you can see. Uses = proficiency bonus, regain on long rest.' },
+        { name: 'Giant Ancestry', notes: 'You have Cloud Giant ancestry, granting you the Cloud\'s Jaunt ability.' },
+        { name: 'Large Form (Level 5+)', notes: 'At 5th level, as a bonus action, you can change your size to Large if there is enough space. Lasts 10 minutes. Can use proficiency bonus times per long rest.' },
+        { name: 'Powerful Build', notes: 'Count as one size larger when determining carrying capacity and weight you can push, drag, or lift.' }
+    ],
+    'Goliath (Fire Giant)': [
+        { name: 'Fire\'s Burn', notes: 'When you hit a target with an attack roll and deal damage, you can also deal 1d10 fire damage to that target. Uses = proficiency bonus, regain on long rest.' },
+        { name: 'Giant Ancestry', notes: 'You have Fire Giant ancestry, granting you the Fire\'s Burn ability.' },
+        { name: 'Large Form (Level 5+)', notes: 'At 5th level, as a bonus action, you can change your size to Large if there is enough space. Lasts 10 minutes. Can use proficiency bonus times per long rest.' },
+        { name: 'Powerful Build', notes: 'Count as one size larger when determining carrying capacity and weight you can push, drag, or lift.' }
+    ],
+    'Goliath (Frost Giant)': [
+        { name: 'Frost\'s Chill', notes: 'When you hit a target with an attack roll and deal damage, you can also deal 1d6 cold damage to that target and reduce its speed by 10 feet until the start of your next turn. Uses = proficiency bonus, regain on long rest.' },
+        { name: 'Giant Ancestry', notes: 'You have Frost Giant ancestry, granting you the Frost\'s Chill ability.' },
+        { name: 'Large Form (Level 5+)', notes: 'At 5th level, as a bonus action, you can change your size to Large if there is enough space. Lasts 10 minutes. Can use proficiency bonus times per long rest.' },
+        { name: 'Powerful Build', notes: 'Count as one size larger when determining carrying capacity and weight you can push, drag, or lift.' }
+    ],
+    'Goliath (Hill Giant)': [
+        { name: 'Hill\'s Tumble', notes: 'When you hit a Large or smaller creature with an attack roll and deal damage, you can give that target the Prone condition. Uses = proficiency bonus, regain on long rest.' },
+        { name: 'Giant Ancestry', notes: 'You have Hill Giant ancestry, granting you the Hill\'s Tumble ability.' },
+        { name: 'Large Form (Level 5+)', notes: 'At 5th level, as a bonus action, you can change your size to Large if there is enough space. Lasts 10 minutes. Can use proficiency bonus times per long rest.' },
+        { name: 'Powerful Build', notes: 'Count as one size larger when determining carrying capacity and weight you can push, drag, or lift.' }
+    ],
+    'Goliath (Stone Giant)': [
+        { name: 'Stone\'s Endurance', notes: 'When you take damage, you can use your reaction to roll 1d12, add your CON modifier, and reduce the damage by that total. Uses = proficiency bonus, regain on long rest.' },
+        { name: 'Giant Ancestry', notes: 'You have Stone Giant ancestry, granting you the Stone\'s Endurance ability.' },
+        { name: 'Large Form (Level 5+)', notes: 'At 5th level, as a bonus action, you can change your size to Large if there is enough space. Lasts 10 minutes. Can use proficiency bonus times per long rest.' },
+        { name: 'Powerful Build', notes: 'Count as one size larger when determining carrying capacity and weight you can push, drag, or lift.' }
+    ],
+    'Goliath (Storm Giant)': [
+        { name: 'Storm\'s Thunder', notes: 'When you take damage from a creature within 60 feet of you, you can use your reaction to deal 1d8 thunder damage to that creature. Uses = proficiency bonus, regain on long rest.' },
+        { name: 'Giant Ancestry', notes: 'You have Storm Giant ancestry, granting you the Storm\'s Thunder ability.' },
+        { name: 'Large Form (Level 5+)', notes: 'At 5th level, as a bonus action, you can change your size to Large if there is enough space. Lasts 10 minutes. Can use proficiency bonus times per long rest.' },
+        { name: 'Powerful Build', notes: 'Count as one size larger when determining carrying capacity and weight you can push, drag, or lift.' }
+    ],
+    Gnome: [
+        { name: 'Darkvision', notes: 'See in dim light within 60 feet as if bright light, darkness as dim light.' },
+        { name: 'Gnome Cunning', notes: 'Advantage on INT, WIS, and CHA saves against magic.' },
+        { name: 'Small Size', notes: 'You are Small. Speed is 25 feet.' }
+    ],
+    'Half-Elf': [
+        { name: 'Darkvision', notes: 'See in dim light within 60 feet as if bright light, darkness as dim light.' },
+        { name: 'Fey Ancestry', notes: 'Advantage on saves against charmed, magic can\'t put you to sleep.' },
+        { name: 'Skill Versatility', notes: 'Gain proficiency in two skills of your choice.' }
+    ],
+    'Half-Orc': [
+        { name: 'Darkvision', notes: 'See in dim light within 60 feet as if bright light, darkness as dim light.' },
+        { name: 'Relentless Endurance', notes: 'When reduced to 0 HP but not killed outright, drop to 1 HP instead. Can\'t use again until you finish a long rest.' },
+        { name: 'Savage Attacks', notes: 'When you score a critical hit with a melee weapon, roll one of the weapon\'s damage dice one additional time and add it to the extra damage.' },
+        { name: 'Adrenaline Rush', notes: 'Use bonus action to move up to your speed toward an enemy. Can use proficiency bonus times per long rest.' }
+    ],
+    Orc: [
+        { name: 'Darkvision', notes: 'See in dim light within 60 feet as if bright light, darkness as dim light.' },
+        { name: 'Powerful Build', notes: 'Count as one size larger when determining carrying capacity and weight you can push, drag, or lift.' },
+        { name: 'Relentless Endurance', notes: 'When reduced to 0 HP but not killed outright, drop to 1 HP instead. Can\'t use again until you finish a long rest.' },
+        { name: 'Adrenaline Rush', notes: 'Use bonus action to move up to your speed toward an enemy. Can use proficiency bonus times per long rest.' }
+    ],
+    Aasimar: [
+        { name: 'Darkvision', notes: 'See in dim light within 60 feet as if bright light, darkness as dim light.' },
+        { name: 'Celestial Resistance', notes: 'Resistance to necrotic damage and radiant damage.' },
+        { name: 'Healing Hands', notes: 'Touch a creature to restore HP = your level. Can use a number of times = proficiency bonus, regain on long rest.' },
+        { name: 'Light Bearer', notes: 'You know the Light cantrip. CHA is your spellcasting ability for it.' }
     ]
 };
 
@@ -2544,6 +2614,7 @@ function autoPopulateClassTraits() {
 
     // Update HP, proficiency, and counters
     updateCharacterStats();
+    applyTraitEffectsToCharacterSheet();
     createCountersFromTraits();
     renderTraits();
     saveUserData();
@@ -2577,8 +2648,148 @@ function autoPopulateSpeciesTraits() {
     }
 
     createCountersFromTraits();
+    applyTraitEffectsToCharacterSheet();
     renderTraits();
     saveUserData();
+}
+
+function applyTraitEffectsToCharacterSheet() {
+    const char = characters[currentCharacterIndex];
+    if (!char.traits) return;
+
+    const className = document.getElementById('charClass').value;
+    const level = parseInt(document.getElementById('charLevel').value) || 1;
+
+    // Get ability scores
+    const dexScore = parseInt(document.getElementById('dex').value) || 10;
+    const dexMod = Math.floor((dexScore - 10) / 2);
+    const conScore = parseInt(document.getElementById('con').value) || 10;
+    const conMod = Math.floor((conScore - 10) / 2);
+    const wisScore = parseInt(document.getElementById('wis').value) || 10;
+    const wisMod = Math.floor((wisScore - 10) / 2);
+
+    let baseSpeed = 30; // Default speed
+    let speedBonus = 0;
+    let hasUnarmoredDefense = false;
+    let unarmoredDefenseFormula = '';
+
+    // Check each trait for effects
+    char.traits.forEach(trait => {
+        const name = trait.name.toLowerCase();
+        const notes = (trait.notes || '').toLowerCase();
+
+        // Fast Movement (Barbarian)
+        if (name.includes('fast movement') && notes.includes('speed increases by 10')) {
+            speedBonus += 10;
+        }
+
+        // Unarmored Movement (Monk) - scales with level
+        if (name.includes('unarmored movement')) {
+            if (level >= 18) {
+                speedBonus += 30;
+            } else if (level >= 14) {
+                speedBonus += 25;
+            } else if (level >= 10) {
+                speedBonus += 20;
+            } else if (level >= 6) {
+                speedBonus += 15;
+            } else if (level >= 2) {
+                speedBonus += 10;
+            }
+        }
+
+        // Roving (Ranger) - +5ft at level 1, +10ft at level 6
+        if (name.includes('deft explorer') && notes.includes('speed increases by 5')) {
+            speedBonus += 5;
+        }
+        if (name.includes('roving') && notes.includes('speed increases by 5')) {
+            speedBonus += 5;
+        }
+
+        // Unarmored Defense (Barbarian)
+        if (name.includes('unarmored defense') && notes.includes('ac = 10 + dex + con')) {
+            hasUnarmoredDefense = true;
+            const unarmoredAC = 10 + dexMod + conMod;
+            unarmoredDefenseFormula = `AC = 10 + DEX (${dexMod >= 0 ? '+' : ''}${dexMod}) + CON (${conMod >= 0 ? '+' : ''}${conMod}) = ${unarmoredAC}`;
+
+            // Update AC field
+            if (document.getElementById('ac')) {
+                document.getElementById('ac').value = unarmoredAC;
+            }
+        }
+
+        // Unarmored Defense (Monk)
+        if (name.includes('unarmored defense') && notes.includes('ac = 10 + dex + wis')) {
+            hasUnarmoredDefense = true;
+            const unarmoredAC = 10 + dexMod + wisMod;
+            unarmoredDefenseFormula = `AC = 10 + DEX (${dexMod >= 0 ? '+' : ''}${dexMod}) + WIS (${wisMod >= 0 ? '+' : ''}${wisMod}) = ${unarmoredAC}`;
+
+            // Update AC field
+            if (document.getElementById('ac')) {
+                document.getElementById('ac').value = unarmoredAC;
+            }
+        }
+
+        // Dwarven Toughness - HP bonus
+        if (name.includes('dwarven toughness') && notes.includes('hp maximum increases by 1 per level')) {
+            // This is handled by Set HP button, but we can add a note
+            console.log('Dwarven Toughness: Add +' + level + ' to max HP');
+        }
+    });
+
+    // Apply speed changes
+    const totalSpeed = baseSpeed + speedBonus;
+    if (document.getElementById('speed')) {
+        document.getElementById('speed').value = totalSpeed;
+    }
+
+    // Log unarmored defense info
+    if (hasUnarmoredDefense) {
+        console.log('Unarmored Defense applied:', unarmoredDefenseFormula);
+    }
+
+    // Update attack bonuses
+    updateAttackBonuses();
+}
+
+function updateAttackBonuses() {
+    // Get ability scores
+    const strScore = parseInt(document.getElementById('str').value) || 10;
+    const strMod = Math.floor((strScore - 10) / 2);
+    const dexScore = parseInt(document.getElementById('dex').value) || 10;
+    const dexMod = Math.floor((dexScore - 10) / 2);
+
+    // Get proficiency bonus
+    const profBonus = parseInt(document.getElementById('profBonus').value) || 2;
+
+    // Calculate attack bonuses
+    const meleeBonus = profBonus + strMod;
+    const rangedBonus = profBonus + dexMod;
+    const finesseBonus = profBonus + Math.max(strMod, dexMod);
+
+    // Update display
+    if (document.getElementById('meleeAttackBonus')) {
+        document.getElementById('meleeAttackBonus').textContent = meleeBonus >= 0 ? `+${meleeBonus}` : meleeBonus;
+    }
+    if (document.getElementById('rangedAttackBonus')) {
+        document.getElementById('rangedAttackBonus').textContent = rangedBonus >= 0 ? `+${rangedBonus}` : rangedBonus;
+    }
+    if (document.getElementById('finesseAttackBonus')) {
+        document.getElementById('finesseAttackBonus').textContent = finesseBonus >= 0 ? `+${finesseBonus}` : finesseBonus;
+    }
+
+    // Update formulas
+    if (document.getElementById('meleeAttackFormula')) {
+        document.getElementById('meleeAttackFormula').textContent = `Prof (${profBonus >= 0 ? '+' : ''}${profBonus}) + STR (${strMod >= 0 ? '+' : ''}${strMod})`;
+    }
+    if (document.getElementById('rangedAttackFormula')) {
+        document.getElementById('rangedAttackFormula').textContent = `Prof (${profBonus >= 0 ? '+' : ''}${profBonus}) + DEX (${dexMod >= 0 ? '+' : ''}${dexMod})`;
+    }
+    if (document.getElementById('finesseAttackFormula')) {
+        const usedMod = Math.max(strMod, dexMod);
+        const usedStat = usedMod === strMod ? 'STR' : 'DEX';
+        document.getElementById('finesseAttackFormula').textContent = `Prof (${profBonus >= 0 ? '+' : ''}${profBonus}) + ${usedStat} (${usedMod >= 0 ? '+' : ''}${usedMod})`;
+    }
 }
 
 function createCountersFromTraits() {
@@ -2745,6 +2956,124 @@ function createCountersFromTraits() {
                 current: profBonus,
                 autoGenerated: true
             });
+        }
+
+        // Little Giant (Goliath)
+        if (name.includes('little giant') && trait.type === 'species') {
+            char.counters.push({
+                id: `auto-littlegiant-${Date.now()}`,
+                name: 'Little Giant',
+                max: profBonus,
+                current: profBonus,
+                autoGenerated: true
+            });
+        }
+
+        // Relentless Endurance (Half-Orc, Orc)
+        if (name.includes('relentless endurance') && trait.type === 'species') {
+            char.counters.push({
+                id: `auto-relentless-${Date.now()}`,
+                name: 'Relentless Endurance',
+                max: 1,
+                current: 1,
+                autoGenerated: true
+            });
+        }
+
+        // Adrenaline Rush (Half-Orc, Orc)
+        if (name.includes('adrenaline rush') && trait.type === 'species') {
+            char.counters.push({
+                id: `auto-adrenaline-${Date.now()}`,
+                name: 'Adrenaline Rush',
+                max: profBonus,
+                current: profBonus,
+                autoGenerated: true
+            });
+        }
+
+        // Healing Hands (Aasimar)
+        if (name.includes('healing hands') && trait.type === 'species') {
+            char.counters.push({
+                id: `auto-healinghands-${Date.now()}`,
+                name: 'Healing Hands',
+                max: profBonus,
+                current: profBonus,
+                autoGenerated: true
+            });
+        }
+
+        // Goliath Giant Ancestry Abilities
+        if (trait.type === 'species') {
+            // Cloud's Jaunt
+            if (name.includes('cloud\'s jaunt')) {
+                char.counters.push({
+                    id: `auto-cloudsjaunt-${Date.now()}`,
+                    name: 'Cloud\'s Jaunt',
+                    max: profBonus,
+                    current: profBonus,
+                    autoGenerated: true
+                });
+            }
+            // Fire's Burn
+            if (name.includes('fire\'s burn')) {
+                char.counters.push({
+                    id: `auto-firesburn-${Date.now()}`,
+                    name: 'Fire\'s Burn',
+                    max: profBonus,
+                    current: profBonus,
+                    autoGenerated: true
+                });
+            }
+            // Frost's Chill
+            if (name.includes('frost\'s chill')) {
+                char.counters.push({
+                    id: `auto-frostschill-${Date.now()}`,
+                    name: 'Frost\'s Chill',
+                    max: profBonus,
+                    current: profBonus,
+                    autoGenerated: true
+                });
+            }
+            // Hill's Tumble
+            if (name.includes('hill\'s tumble')) {
+                char.counters.push({
+                    id: `auto-hillstumble-${Date.now()}`,
+                    name: 'Hill\'s Tumble',
+                    max: profBonus,
+                    current: profBonus,
+                    autoGenerated: true
+                });
+            }
+            // Stone's Endurance
+            if (name.includes('stone\'s endurance')) {
+                char.counters.push({
+                    id: `auto-stonesendurance-${Date.now()}`,
+                    name: 'Stone\'s Endurance',
+                    max: profBonus,
+                    current: profBonus,
+                    autoGenerated: true
+                });
+            }
+            // Storm's Thunder
+            if (name.includes('storm\'s thunder')) {
+                char.counters.push({
+                    id: `auto-stormsthunder-${Date.now()}`,
+                    name: 'Storm\'s Thunder',
+                    max: profBonus,
+                    current: profBonus,
+                    autoGenerated: true
+                });
+            }
+            // Large Form (Level 5+)
+            if (name.includes('large form') && level >= 5) {
+                char.counters.push({
+                    id: `auto-largeform-${Date.now()}`,
+                    name: 'Large Form',
+                    max: profBonus,
+                    current: profBonus,
+                    autoGenerated: true
+                });
+            }
         }
     });
 

@@ -2941,6 +2941,46 @@ header .logo-header .trogdor-logo {
 }
 
 /* Equipment System */
+.attack-bonuses-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--dark);
+    border: 2px solid var(--secondary);
+    border-radius: 8px;
+}
+
+.attack-bonus-box {
+    background: var(--darker);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
+}
+
+.attack-bonus-label {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.attack-bonus-value {
+    color: var(--secondary);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.attack-bonus-formula {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
 .equipment-subsection {
     margin-bottom: 30px;
 }
@@ -3022,6 +3062,8 @@ header .logo-header .trogdor-logo {
     color: var(--text-dim);
     font-size: 0.9rem;
     line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .equipment-delete {
@@ -3489,6 +3531,8 @@ header .logo-header .trogdor-logo {
     line-height: 1.6;
     font-size: 0.95rem;
     border-top: 1px solid var(--border);
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .trait-add-btn {
