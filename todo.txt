@@ -1,14 +1,29 @@
-finish character sheets
-spell slots
-tie counters to character
-prepopulate characters weapons
-inventory
-improve weapons
-dice roller
-save encounters
-choose monsters and save encounter
-currency
-auto populate on level
-dice roller
+campaign characters arent showing feats, spells, inventory, equipment
+update spells if the character automatically learns and prepares spells from a table at that level ex draconic sorcerer
+group monsters by themes to create themed encounters
+	Do  it based on location? (ex. Haunted Manor, Burning plains, foggy mountains)
+Player monster manual - just images so as to not meta game
+interactable battle map
+multi class support
+cast spells from character sheet?
+reset just spell slots button
+create custom monster
+combat options ex. got hit for x damage and have it automatically deduct hp and do concentration checks
+	can go further and be able to choose a spell/weapon and have it automatically roll for hit and damage, maybe create a turn plan ex. Monk attacks twice, bonus attacks twice, all at adavntage, then it rolls all the dice
 
 roguelike arena
+generate a random dungeon?
+have it be full touch screen interactable
+
+add it as an app?
+
+
+bugs:
+Wrong password just shows try again, enter keeps repompting it, just do an inline display of 'Wrong password'
+
+prd changes:
+tell it to update based on all the features we currently have and include
+all saves should be to the server
+all data changes should persist
+all prompts should go through the gui
+everything should be DnD 2024 rules

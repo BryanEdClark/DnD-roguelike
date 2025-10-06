@@ -314,7 +314,7 @@ function displayMonsterDetail(monster) {
     `;
 }
 
-// Main tab switching (DM Tools / Player Tools / Dice Roller)
+// Main tab switching (DM Tools / Player Tools / Dice Roller / Reference)
 function switchTab(tab) {
     // Remove active class from all main tabs and content
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -332,26 +332,1172 @@ function switchTab(tab) {
     } else if (tab === 'diceroller') {
         document.querySelectorAll('.tab-button')[2].classList.add('active');
         document.getElementById('dicerollerTab').classList.add('active');
+    } else if (tab === 'reference') {
+        document.querySelectorAll('.tab-button')[3].classList.add('active');
+        document.getElementById('referenceTab').classList.add('active');
+        switchReferenceSection('quickref');
     }
 }
 
 // Section switching within DM Tools
 function switchSection(section) {
     // Remove active class from all section tabs
-    document.querySelectorAll('.section-tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('#dmtoolsTab .section-tab-button').forEach(btn => btn.classList.remove('active'));
 
-    // Remove active class from encounter and browser tabs
+    // Remove active class from encounter, browser, and campaigns tabs
     document.getElementById('encounterTab').classList.remove('active');
     document.getElementById('browserTab').classList.remove('active');
+    if (document.getElementById('campaignsTab')) {
+        document.getElementById('campaignsTab').classList.remove('active');
+    }
 
     // Add active class to selected section
     if (section === 'encounter') {
-        document.querySelector('.section-tab-button:first-child').classList.add('active');
+        document.querySelectorAll('#dmtoolsTab .section-tab-button')[0].classList.add('active');
         document.getElementById('encounterTab').classList.add('active');
     } else if (section === 'browser') {
-        document.querySelector('.section-tab-button:last-child').classList.add('active');
+        document.querySelectorAll('#dmtoolsTab .section-tab-button')[1].classList.add('active');
         document.getElementById('browserTab').classList.add('active');
+    } else if (section === 'campaigns') {
+        document.querySelectorAll('#dmtoolsTab .section-tab-button')[2].classList.add('active');
+        document.getElementById('campaignsTab').classList.add('active');
+        loadCampaignsList();
     }
+}
+
+// Section switching within Reference
+function switchReferenceSection(section) {
+    // Remove active class from all reference section tabs
+    document.querySelectorAll('#referenceTab .section-tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.reference-section').forEach(content => content.classList.remove('active'));
+
+    // Add active class to selected section
+    if (section === 'quickref') {
+        document.querySelectorAll('#referenceTab .section-tab-button')[0].classList.add('active');
+        document.getElementById('quickrefSection').classList.add('active');
+    } else if (section === 'species') {
+        document.querySelectorAll('#referenceTab .section-tab-button')[1].classList.add('active');
+        document.getElementById('speciesSection').classList.add('active');
+    } else if (section === 'classes') {
+        document.querySelectorAll('#referenceTab .section-tab-button')[2].classList.add('active');
+        document.getElementById('classesSection').classList.add('active');
+    } else if (section === 'rules') {
+        document.querySelectorAll('#referenceTab .section-tab-button')[3].classList.add('active');
+        document.getElementById('rulesSection').classList.add('active');
+    } else if (section === 'spells') {
+        document.querySelectorAll('#referenceTab .section-tab-button')[4].classList.add('active');
+        document.getElementById('spellsSection').classList.add('active');
+        renderReferenceSpells();
+    } else if (section === 'shop') {
+        document.querySelectorAll('#referenceTab .section-tab-button')[5].classList.add('active');
+        document.getElementById('shopSection').classList.add('active');
+        renderShopItems();
+    } else if (section === 'monsters') {
+        document.querySelectorAll('#referenceTab .section-tab-button')[6].classList.add('active');
+        document.getElementById('monstersSection').classList.add('active');
+    }
+}
+
+// Species information data
+const speciesInfo = {
+    'human': {
+        name: 'Human',
+        size: 'Medium',
+        speed: '30 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Age', desc: 'Humans reach adulthood in their late teens and live less than a century.' },
+            { name: 'Alignment', desc: 'Humans tend toward no particular alignment.' },
+            { name: 'Size', desc: 'Humans vary widely in height and build, from barely 5 feet to well over 6 feet tall. Your size is Medium.' },
+            { name: 'Speed', desc: 'Your base walking speed is 30 feet.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and one extra language of your choice.' }
+        ]
+    },
+    'elf': {
+        name: 'Elf',
+        size: 'Medium',
+        speed: '30 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Size', desc: 'Elves range from under 5 to over 6 feet tall and have slender builds. Your size is Medium.' },
+            { name: 'Speed', desc: 'Your base walking speed is 30 feet.' },
+            { name: 'Darkvision', desc: 'You have Darkvision with a range of 60 feet.' },
+            { name: 'Elven Lineage', desc: '2024 PHB: You are part of an elven lineage. Choose one of the following options: Drow, High Elf, or Wood Elf. Your choice grants you spells and other traits.' },
+            { name: 'Fey Ancestry', desc: 'You have Advantage on saving throws you make to avoid or end the Charmed condition.' },
+            { name: 'Keen Senses', desc: '2024 PHB: You have proficiency in the Insight, Perception, or Survival skill (your choice).' },
+            { name: 'Trance', desc: 'You don\'t need to sleep, and magic can\'t put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you remain conscious.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and Elvish.' }
+        ],
+        subspecies: [
+            { name: 'Drow (Dark Elf)', desc: '2024 PHB: Darkvision 120 feet. You know the Dancing Lights cantrip. At 3rd level, you can cast Faerie Fire. At 5th level, you can cast Darkness. You can cast each spell with this trait once without a spell slot and regain the ability when you finish a Long Rest. You can also cast these spells using any spell slots you have. Intelligence, Wisdom, or Charisma is your spellcasting ability for these spells (choose when you select this lineage).' },
+            { name: 'High Elf', desc: '2024 PHB: You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace Prestidigitation with a different Wizard cantrip. At 3rd level, you can cast Detect Magic. At 5th level, you can cast Misty Step. You can cast each spell with this trait once without a spell slot and regain the ability when you finish a Long Rest. You can also cast these spells using any spell slots you have. Intelligence, Wisdom, or Charisma is your spellcasting ability for these spells (choose when you select this lineage).' },
+            { name: 'Wood Elf', desc: '2024 PHB: Your Speed increases to 35 feet. You know the Druidcraft cantrip. At 3rd level, you can cast Longstrider. At 5th level, you can cast Pass Without Trace. You can cast each spell with this trait once without a spell slot and regain the ability when you finish a Long Rest. You can also cast these spells using any spell slots you have. Intelligence, Wisdom, or Charisma is your spellcasting ability for these spells (choose when you select this lineage).' }
+        ]
+    },
+    'dwarf': {
+        name: 'Dwarf',
+        size: 'Medium',
+        speed: '30 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Size', desc: 'Dwarves stand between 4 and 5 feet tall. Your size is Medium.' },
+            { name: 'Speed', desc: '2024 PHB: Your base walking speed is 30 feet. Your speed is not reduced by wearing heavy armor.' },
+            { name: 'Darkvision', desc: '2024 PHB: You have Darkvision with a range of 120 feet.' },
+            { name: 'Dwarven Resilience', desc: 'You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition.' },
+            { name: 'Dwarven Toughness', desc: '2024 PHB: Your Hit Point maximum increases by 1, and it increases by 1 again whenever you gain a level.' },
+            { name: 'Stonecunning', desc: '2024 PHB: As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked. You can use this Bonus Action a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and Dwarvish.' }
+        ],
+        subspecies: [
+            { name: 'Hill Dwarf', desc: '2024 PHB: Dwarven Toughness is a base trait for all Dwarves. Hill Dwarves gain proficiency in one of the following skills: Animal Handling, Medicine, Nature, or Survival.' },
+            { name: 'Mountain Dwarf', desc: '2024 PHB: Proficiency with light and medium armor. You have proficiency with battleaxe, handaxe, light hammer, and warhammer.' },
+            { name: 'Duergar (Gray Dwarf)', desc: '2024 PHB: Duergar Magic - You know the Mage Hand cantrip. Starting at 3rd level, you can cast Enlarge/Reduce on yourself once per Long Rest. Starting at 5th level, you can cast Invisibility on yourself once per Long Rest. Intelligence, Wisdom, or Charisma is your spellcasting ability for these spells (choose when you select this lineage).' }
+        ]
+    },
+    'halfling': {
+        name: 'Halfling',
+        size: 'Small',
+        speed: '30 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Size', desc: 'Halflings average about 3 feet tall. Your size is Small.' },
+            { name: 'Speed', desc: '2024 PHB: Your base walking speed is 30 feet.' },
+            { name: 'Brave', desc: 'You have Advantage on saving throws you make to avoid or end the Frightened condition.' },
+            { name: 'Halfling Nimbleness', desc: 'You can move through the space of any creature that is a size larger than you, but you can\'t stop in the same space.' },
+            { name: 'Luck', desc: '2024 PHB: When you roll a 1 on the d20 of a D20 Test, you can reroll the die, and you must use the new roll.' },
+            { name: 'Naturally Stealthy', desc: 'You can take the Hide action even when you are obscured only by a creature that is at least one size larger than you.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and Halfling.' }
+        ],
+        subspecies: [
+            { name: 'Lightfoot', desc: '2024 PHB: Naturally Stealthy is a base trait for all Halflings. Lightfoot Halflings gain no additional unique traits beyond the base Halfling traits.' },
+            { name: 'Stout', desc: '2024 PHB: Stout Resilience - You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition.' }
+        ]
+    },
+    'dragonborn': {
+        name: 'Dragonborn',
+        size: 'Medium',
+        speed: '30 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Size', desc: 'Dragonborn are taller and heavier than humans, standing over 6 feet tall. Your size is Medium.' },
+            { name: 'Speed', desc: 'Your base walking speed is 30 feet.' },
+            { name: 'Draconic Ancestry', desc: '2024 PHB: You are the descendant of a dragon. Choose one kind of dragon from the Draconic Ancestry table. Your choice affects your Breath Weapon and Damage Resistance traits, as well as your appearance.' },
+            { name: 'Breath Weapon', desc: '2024 PHB: When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone or a 30-foot Line that is 5 feet wide (your choice each time). Each creature in that area must make a Dexterity saving throw (DC = 8 + your Constitution modifier + your Proficiency Bonus). On a failed save, a creature takes 1d10 damage of the type determined by your Draconic Ancestry. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10). You can use this Breath Weapon a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.' },
+            { name: 'Damage Resistance', desc: 'You have Resistance to the damage type determined by your Draconic Ancestry.' },
+            { name: 'Draconic Flight', desc: '2024 PHB: When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a Bonus Action, you sprout spectral wings that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition. During that time, you have a Fly Speed equal to your Speed. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can\'t use it again until you finish a Long Rest.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and Draconic.' }
+        ],
+        subspecies: [
+            { name: 'Black Dragon', desc: '2024 PHB: Acid damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'Blue Dragon', desc: '2024 PHB: Lightning damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'Brass Dragon', desc: '2024 PHB: Fire damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'Bronze Dragon', desc: '2024 PHB: Lightning damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'Copper Dragon', desc: '2024 PHB: Acid damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'Gold Dragon', desc: '2024 PHB: Fire damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'Green Dragon', desc: '2024 PHB: Poison damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'Red Dragon', desc: '2024 PHB: Fire damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'Silver Dragon', desc: '2024 PHB: Cold damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' },
+            { name: 'White Dragon', desc: '2024 PHB: Cold damage. Can choose 15 ft Cone or 30 ft Line for Breath Weapon.' }
+        ]
+    },
+    'gnome': {
+        name: 'Gnome',
+        size: 'Small',
+        speed: '30 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Size', desc: 'Gnomes are between 3 and 4 feet tall. Your size is Small.' },
+            { name: 'Speed', desc: '2024 PHB: Your base walking speed is 30 feet.' },
+            { name: 'Darkvision', desc: 'You have Darkvision with a range of 60 feet.' },
+            { name: 'Gnomish Cunning', desc: 'You have Advantage on Intelligence, Wisdom, and Charisma saving throws.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and Gnomish.' }
+        ],
+        subspecies: [
+            { name: 'Forest Gnome', desc: '2024 PHB: You know the Minor Illusion and Speak with Animals spells. Intelligence is your spellcasting ability for these spells.' },
+            { name: 'Rock Gnome', desc: '2024 PHB: You know the Mending and Prestidigitation cantrips. Intelligence is your spellcasting ability for these spells. Artificer\'s Lore: You have proficiency with Artisan\'s Tools (any). Whenever you make an Intelligence (History) check about the origin of any manufactured item, add twice your Proficiency Bonus instead of any Proficiency Bonus you normally apply.' },
+            { name: 'Deep Gnome (Svirfneblin)', desc: '2024 PHB: You have Darkvision with a range of 120 feet (instead of 60 feet). You know the Disguise Self and Nondetection spells. You can cast each spell with this trait once without a spell slot, and you regain the ability to do so when you finish a Long Rest. You can also cast these spells using any spell slots you have. Intelligence, Wisdom, or Charisma is your spellcasting ability for these spells (choose when you select this lineage).' }
+        ]
+    },
+    'goliath': {
+        name: 'Goliath',
+        size: 'Medium',
+        speed: '35 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Size', desc: 'Goliaths are between 7 and 8 feet tall and weigh between 280 and 340 pounds. Your size is Medium.' },
+            { name: 'Speed', desc: 'Your base walking speed is 35 feet.' },
+            { name: 'Giant Ancestry', desc: '2024 PHB: You are descended from Giants. Choose one of the following benefits (usable Proficiency Bonus times per Long Rest): Cloud\'s Jaunt (teleport 30 ft as bonus action), Fire\'s Burn (+1d10 fire damage when you hit), Frost\'s Chill (+1d6 cold damage and -10 ft speed when you hit), Hill\'s Tumble (knock Large or smaller prone when you hit), Stone\'s Fortitude (1d12 + CON modifier to reduce damage as reaction), or Storm\'s Thunder (+1d8 thunder damage when you hit).' },
+            { name: 'Large Form', desc: '2024 PHB: Starting at level 5, you can become Large as a bonus action for 10 minutes (if space allows). While Large, you have Advantage on Strength checks and your Speed increases by 10 feet. Once per Long Rest.' },
+            { name: 'Powerful Build', desc: '2024 PHB: You have Advantage on any ability check to end the Grappled condition on yourself. You count as one size larger when determining your carrying capacity and the weight you can push, drag, or lift.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and Giant.' }
+        ],
+        subspecies: [
+            { name: 'Cloud Giant Ancestry', desc: '2024 PHB: Cloud\'s Jaunt - As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see. Usable Proficiency Bonus times per Long Rest.' },
+            { name: 'Fire Giant Ancestry', desc: '2024 PHB: Fire\'s Burn - When you hit a target with an attack roll and deal damage, you can deal an extra 1d10 Fire damage to that target. Usable Proficiency Bonus times per Long Rest.' },
+            { name: 'Frost Giant Ancestry', desc: '2024 PHB: Frost\'s Chill - When you hit a target with an attack roll and deal damage, you can deal an extra 1d6 Cold damage and reduce its Speed by 10 feet until the start of your next turn. Usable Proficiency Bonus times per Long Rest.' },
+            { name: 'Hill Giant Ancestry', desc: '2024 PHB: Hill\'s Tumble - When you hit a Large or smaller creature with an attack roll and deal damage, you can give that target the Prone condition. Usable Proficiency Bonus times per Long Rest.' },
+            { name: 'Stone Giant Ancestry', desc: '2024 PHB: Stone\'s Fortitude - When you take damage, you can use your Reaction to roll 1d12, add your Constitution modifier, and reduce the damage by that total. Usable Proficiency Bonus times per Long Rest.' },
+            { name: 'Storm Giant Ancestry', desc: '2024 PHB: Storm\'s Thunder - When you hit a target with an attack roll and deal damage, you can deal an extra 1d8 Thunder damage to that target. Usable Proficiency Bonus times per Long Rest.' }
+        ]
+    },
+    'orc': {
+        name: 'Orc',
+        size: 'Medium',
+        speed: '30 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Size', desc: 'Orcs are usually over 6 feet tall and weigh between 230 and 280 pounds. Your size is Medium.' },
+            { name: 'Speed', desc: 'Your base walking speed is 30 feet.' },
+            { name: 'Darkvision', desc: '2024 PHB: You have Darkvision with a range of 120 feet.' },
+            { name: 'Adrenaline Rush', desc: '2024 PHB: You can take the Dash action as a Bonus Action. When you do so, you gain a number of Temporary Hit Points equal to your Proficiency Bonus. You can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Short or Long Rest.' },
+            { name: 'Relentless Endurance', desc: '2024 PHB: When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Point instead. Once you use this trait, you can\'t do so again until you finish a Long Rest.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and Orc.' }
+        ]
+    },
+    'tiefling': {
+        name: 'Tiefling',
+        size: 'Medium',
+        speed: '30 ft',
+        traits: [
+            { name: 'Ability Score Increase', desc: '2024 PHB: Ability score increases come from your Background, not your species. Backgrounds grant either +2 to one ability and +1 to another, or +1 to three different abilities.' },
+            { name: 'Size', desc: 'Tieflings are about the same size and build as humans. Your size is Medium.' },
+            { name: 'Speed', desc: 'Your base walking speed is 30 feet.' },
+            { name: 'Darkvision', desc: 'You have Darkvision with a range of 60 feet.' },
+            { name: 'Fiendish Legacy', desc: '2024 PHB: You are the recipient of a fiendish legacy. Choose one of the following options: Abyssal, Chthonic, or Infernal. Your choice grants you resistance to a damage type, a cantrip, and spells at higher levels.' },
+            { name: 'Otherworldly Presence', desc: 'You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy spells.' },
+            { name: 'Languages', desc: 'You can speak, read, and write Common and one other language of your choice.' }
+        ],
+        subspecies: [
+            { name: 'Abyssal Tiefling', desc: '2024 PHB: You have Resistance to Poison damage. You know the Poison Spray cantrip. At 3rd level, you can cast Ray of Sickness. At 5th level, you can cast Hold Person. You can cast each spell with this trait once without a spell slot and regain the ability when you finish a Long Rest. You can also cast these spells using any spell slots you have. Intelligence, Wisdom, or Charisma is your spellcasting ability for these spells (choose when you select this lineage).' },
+            { name: 'Chthonic Tiefling', desc: '2024 PHB: You have Resistance to Necrotic damage. You know the Chill Touch cantrip. At 3rd level, you can cast False Life. At 5th level, you can cast Ray of Enfeeblement. You can cast each spell with this trait once without a spell slot and regain the ability when you finish a Long Rest. You can also cast these spells using any spell slots you have. Intelligence, Wisdom, or Charisma is your spellcasting ability for these spells (choose when you select this lineage).' },
+            { name: 'Infernal Tiefling', desc: '2024 PHB: You have Resistance to Fire damage. You know the Fire Bolt cantrip. At 3rd level, you can cast Hellish Rebuke. At 5th level, you can cast Darkness. You can cast each spell with this trait once without a spell slot and regain the ability when you finish a Long Rest. You can also cast these spells using any spell slots you have. Intelligence, Wisdom, or Charisma is your spellcasting ability for these spells (choose when you select this lineage).' }
+        ]
+    }
+};
+
+// Display species information
+function displaySpeciesInfo() {
+    const select = document.getElementById('speciesInfoSelect');
+    const display = document.getElementById('speciesInfoDisplay');
+    const species = select.value;
+
+    if (!species || !speciesInfo[species]) {
+        display.innerHTML = '<p class="no-selection">Select a species to view its information</p>';
+        return;
+    }
+
+    const info = speciesInfo[species];
+    let html = `
+        <div class="reference-card">
+            <h3>${info.name}</h3>
+            <div class="reference-detail">
+                <strong>Size:</strong> ${info.size}
+            </div>
+            <div class="reference-detail">
+                <strong>Speed:</strong> ${info.speed}
+            </div>
+        </div>
+
+        <div class="reference-card">
+            <h3>Traits</h3>
+    `;
+
+    info.traits.forEach(trait => {
+        html += `
+            <div class="reference-detail">
+                <strong>${trait.name}:</strong> ${trait.desc}
+            </div>
+        `;
+    });
+
+    html += '</div>';
+
+    if (info.subspecies && info.subspecies.length > 0) {
+        html += `
+            <div class="reference-card">
+                <h3>Subspecies</h3>
+        `;
+        info.subspecies.forEach(sub => {
+            html += `
+                <div class="reference-detail">
+                    <strong>${sub.name}:</strong> ${sub.desc}
+                </div>
+            `;
+        });
+        html += '</div>';
+    }
+
+    display.innerHTML = html;
+}
+
+// Class information data
+const classInfo = {
+    'barbarian': {
+        name: 'Barbarian',
+        hitDie: 'd12',
+        primaryAbility: 'Strength',
+        saves: 'Strength, Constitution',
+        armor: 'Light armor, medium armor, shields',
+        weapons: 'Simple weapons, martial weapons',
+        skills: 'Choose 2 from Animal Handling, Athletics, Intimidation, Nature, Perception, Survival',
+        description: 'A fierce warrior of primitive background who can enter a battle rage',
+        features: [
+            { level: 1, name: 'Rage', desc: 'In battle, you fight with primal ferocity. On your turn, you can enter a rage as a bonus action. Gain advantage on STR checks/saves, +2 melee damage with STR weapons, and resistance to physical damage. Lasts 1 minute.' },
+            { level: 1, name: 'Unarmored Defense', desc: 'While not wearing armor, your AC equals 10 + DEX modifier + CON modifier + shield.' },
+            { level: 1, name: 'Weapon Mastery', desc: '2024 PHB: You gain mastery with 2 weapons of your choice. When you attack with a weapon you have mastery with, you can use that weapon\'s special mastery property. You gain mastery with additional weapons at higher levels (3 at 4th level, 4 at 10th level).' },
+            { level: 2, name: 'Reckless Attack', desc: 'You can throw aside all concern for defense. When you make your first attack on your turn, you can choose to attack recklessly, giving you advantage on melee weapon attacks using STR during this turn, but attack rolls against you have advantage until your next turn.' },
+            { level: 2, name: 'Danger Sense', desc: 'You gain advantage on DEX saving throws against effects you can see, such as traps and spells. You can\'t be blinded, deafened, or incapacitated.' },
+            { level: 3, name: 'Primal Path', desc: 'Choose a path that shapes your rage: Berserker, Totem Warrior, or other.' },
+            { level: 5, name: 'Extra Attack', desc: 'You can attack twice when you take the Attack action.' },
+            { level: 5, name: 'Fast Movement', desc: 'Your speed increases by 10 feet while not wearing heavy armor.' },
+            { level: 7, name: 'Feral Instinct', desc: 'Advantage on initiative rolls. If surprised and not incapacitated, you can act normally on your first turn if you rage.' },
+            { level: 9, name: 'Brutal Critical', desc: 'You can roll one additional weapon damage die when determining extra damage for a critical hit with a melee attack.' },
+            { level: 11, name: 'Relentless Rage', desc: 'If you drop to 0 HP while raging and don\'t die outright, make a DC 10 CON save. On success, drop to 1 HP instead. DC increases by 5 for each subsequent use.' },
+            { level: 15, name: 'Persistent Rage', desc: 'Your rage only ends early if you fall unconscious or choose to end it.' },
+            { level: 18, name: 'Indomitable Might', desc: 'If your STR check total is less than your STR score, you can use your STR score instead.' },
+            { level: 20, name: 'Primal Champion', desc: 'Your STR and CON scores increase by 4. Maximum for those scores is now 24.' }
+        ],
+        subclasses: [
+            { name: 'Path of the Berserker', desc: 'Channels rage into violence. Frenzy lets you make an additional attack as a bonus action while raging, but causes exhaustion. Mindless Rage makes you immune to charm and fear while raging. Intimidating Presence lets you frighten enemies. Retaliation lets you make an opportunity attack when damaged by a creature within 5 feet.' },
+            { name: 'Path of the Totem Warrior', desc: 'Draws on animal spirits. Choose Bear (resistance to all damage except psychic while raging), Eagle (enemies have disadvantage on opportunity attacks, can Dash as bonus action), or Wolf (allies have advantage on attacks against enemies within 5 feet of you). Gain additional totemic features at levels 6, 10, and 14.' },
+            { name: 'Path of the Ancestral Guardian', desc: 'Consults with spirits of honored ancestors. Ancestral Protectors gives first creature you hit disadvantage on attacks against others. Spirit Shield reduces damage to nearby allies. Consult the Spirits lets you cast clairvoyance or augury as a ritual. Vengeful Ancestors punishes creatures that attack your allies.' },
+            { name: 'Path of the Storm Herald', desc: 'Rage surrounds you with supernatural fury. Choose Desert (fire damage aura), Sea (lightning damage to one creature, resistance to lightning), or Tundra (temp HP to allies). Aura grows stronger at higher levels.' },
+            { name: 'Path of the Zealot', desc: 'Fueled by divine fury. Deal extra radiant or necrotic damage on first hit each turn while raging. Free resurrection at 14th level. At 14th, rage beyond death - don\'t fall unconscious until rage ends even at 0 HP.' }
+        ]
+    },
+    'bard': {
+        name: 'Bard',
+        hitDie: 'd8',
+        primaryAbility: 'Charisma',
+        saves: 'Dexterity, Charisma',
+        armor: 'Light armor',
+        weapons: 'Simple weapons, hand crossbows, longswords, rapiers, shortswords',
+        skills: 'Choose any 3',
+        description: 'An inspiring magician whose power echoes the music of creation',
+        features: [
+            { level: 1, name: 'Spellcasting', desc: 'You can cast bard spells using CHA as your spellcasting ability. You know a number of spells and can cast them using spell slots. You can use a musical instrument as a spellcasting focus.' },
+            { level: 1, name: 'Bardic Inspiration (d6)', desc: 'You can inspire others through words or music. As a bonus action, give one creature within 60 feet an Inspiration die (d6). Within 10 minutes, they can add it to one ability check, attack roll, or saving throw. You can use this feature a number of times equal to your CHA modifier (minimum 1), regaining uses on a long rest.' },
+            { level: 2, name: 'Jack of All Trades', desc: 'You can add half your proficiency bonus (rounded down) to any ability check you make that doesn\'t already include your proficiency bonus.' },
+            { level: 2, name: 'Song of Rest', desc: 'During a short rest, you or any friendly creatures who hear your performance regain extra hit points equal to d6 + your bard level.' },
+            { level: 3, name: 'Bard College', desc: 'Choose a college that shapes your bardic arts: Lore, Valor, or other.' },
+            { level: 3, name: 'Expertise', desc: 'Choose two skill proficiencies. Your proficiency bonus is doubled for any ability check using those skills. At 10th level, choose two more.' },
+            { level: 5, name: 'Bardic Inspiration (d8)', desc: 'Your Bardic Inspiration die becomes a d8.' },
+            { level: 5, name: 'Font of Inspiration', desc: 'You regain all expended uses of Bardic Inspiration when you finish a short or long rest.' },
+            { level: 6, name: 'Countercharm', desc: 'As an action, you can perform until the end of your next turn. Friendly creatures within 30 feet have advantage on saving throws against being frightened or charmed.' },
+            { level: 10, name: 'Bardic Inspiration (d10)', desc: 'Your Bardic Inspiration die becomes a d10.' },
+            { level: 10, name: 'Magical Secrets', desc: 'Choose two spells from any class. They count as bard spells for you. You learn two more at 14th and 18th level.' },
+            { level: 14, name: 'Magical Secrets (2)', desc: 'Choose two more spells from any class.' },
+            { level: 15, name: 'Bardic Inspiration (d12)', desc: 'Your Bardic Inspiration die becomes a d12.' },
+            { level: 18, name: 'Magical Secrets (3)', desc: 'Choose two more spells from any class.' },
+            { level: 20, name: 'Superior Inspiration', desc: 'When you roll initiative and have no uses of Bardic Inspiration left, you regain one use.' }
+        ],
+        subclasses: [
+            { name: 'College of Lore', desc: 'Masters of knowledge and secrets. Gain Cutting Words to subtract Bardic Inspiration from enemy rolls. Learn 3 extra skills at 3rd level. Additional Magical Secrets at 6th level (4 levels early). Peerless Skill at 14th lets you add Bardic Inspiration to your own ability checks.' },
+            { name: 'College of Valor', desc: 'Daring skalds who inspire battlefield prowess. Gain medium armor, shields, and martial weapon proficiency. Combat Inspiration lets allies add your Bardic Inspiration to damage or AC. Extra Attack at 6th level. Battle Magic at 14th lets you make a weapon attack as a bonus action after casting a spell.' },
+            { name: 'College of Glamour', desc: 'Wield the beguiling magic of the Feywild. Mantle of Inspiration grants temp HP and movement to allies. Enthralling Performance can charm humanoids. Mantle of Majesty lets you cast command as a bonus action. Unbreakable Majesty causes attackers to make CHA saves or target someone else.' },
+            { name: 'College of Swords', desc: 'Entertaining warriors who use weapon prowess and magic. Gain Fighting Style and use weapons as spellcasting focus. Blade Flourish adds Bardic Inspiration to damage and provides defensive, offensive, or mobile options. Extra Attack at 6th. Master\'s Flourish at 14th lets you add d6 to Blade Flourish damage.' },
+            { name: 'College of Whispers', desc: 'Masters of fear and secrets. Psychic Blades adds Bardic Inspiration as psychic damage. Words of Terror frightens creatures. Mantle of Whispers lets you capture a dying creature\'s shadow to assume their persona. Shadow Lore at 14th magically charms and frightens creatures.' }
+        ]
+    },
+    'cleric': {
+        name: 'Cleric',
+        hitDie: 'd8',
+        primaryAbility: 'Wisdom',
+        saves: 'Wisdom, Charisma',
+        armor: 'Light armor, medium armor, shields',
+        weapons: 'Simple weapons',
+        skills: 'Choose 2 from History, Insight, Medicine, Persuasion, Religion',
+        description: 'A priestly champion who wields divine magic in service of a higher power',
+        features: [
+            { level: 1, name: 'Spellcasting', desc: 'You can cast cleric spells using WIS as your spellcasting ability. You prepare spells from the cleric spell list each day. You can use a holy symbol as a spellcasting focus.' },
+            { level: 1, name: 'Divine Domain', desc: 'Choose a domain related to your deity: Knowledge, Life, Light, Nature, Tempest, Trickery, War, or others. Your domain grants spells and features at 1st, 2nd, 6th, 8th, and 17th level.' },
+            { level: 2, name: 'Channel Divinity (1/rest)', desc: 'You can channel divine energy directly from your deity. You can Turn Undead (frightens undead within 30 feet) or use your domain\'s Channel Divinity option. Regain uses after a short or long rest.' },
+            { level: 5, name: 'Destroy Undead (CR 1/2)', desc: 'When an undead fails its save against your Turn Undead, it is instantly destroyed if its CR is 1/2 or lower. CR threshold increases at higher levels.' },
+            { level: 6, name: 'Channel Divinity (2/rest)', desc: 'You can use Channel Divinity twice between rests.' },
+            { level: 8, name: 'Destroy Undead (CR 1)', desc: 'Your Destroy Undead feature can destroy undead of CR 1 or lower.' },
+            { level: 10, name: 'Divine Intervention', desc: 'You can call on your deity for aid. Roll percentile dice; if you roll equal to or less than your cleric level, your deity intervenes. On success, you can\'t use this again for 7 days; on failure, you can try again after a long rest.' },
+            { level: 11, name: 'Destroy Undead (CR 2)', desc: 'Your Destroy Undead feature can destroy undead of CR 2 or lower.' },
+            { level: 14, name: 'Destroy Undead (CR 3)', desc: 'Your Destroy Undead feature can destroy undead of CR 3 or lower.' },
+            { level: 17, name: 'Destroy Undead (CR 4)', desc: 'Your Destroy Undead feature can destroy undead of CR 4 or lower.' },
+            { level: 18, name: 'Channel Divinity (3/rest)', desc: 'You can use Channel Divinity three times between rests.' },
+            { level: 20, name: 'Divine Intervention Improvement', desc: 'Your Divine Intervention automatically succeeds with no roll required.' }
+        ],
+        subclasses: [
+            { name: 'Knowledge Domain', desc: 'Deities of knowledge value learning and understanding. Gain expertise in two skills and learn two languages. Channel Divinity: Knowledge of the Ages grants proficiency in any skill or tool for 10 minutes. Read Thoughts at 6th lets you read surface thoughts. At 17th, Visions of the Past reveals information about locations or objects.' },
+            { name: 'Life Domain', desc: 'Focused on healing and vitality. Heavy armor proficiency. Disciple of Life adds 2+spell level to healing spells. Channel Divinity: Preserve Life heals up to 5×cleric level HP distributed among creatures. Blessed Healer at 6th heals you when you heal others. Supreme Healing at 17th maximizes healing spell dice.' },
+            { name: 'Light Domain', desc: 'Gods of light promote ideals of rebirth and renewal. Gain light and fireball spells. Warding Flare imposes disadvantage on attacks against you. Channel Divinity: Radiance of the Dawn deals radiant damage to nearby creatures. Improved Flare at 6th protects allies. Corona of Light at 17th grants constant bright light and disadvantage on saves against your fire/radiant spells.' },
+            { name: 'Tempest Domain', desc: 'Gods of storms and thunder. Heavy armor and martial weapon proficiency. Wrath of the Storm deals lightning/thunder damage to attackers. Channel Divinity: Destructive Wrath maximizes lightning/thunder damage. Thunderbolt Strike at 6th pushes creatures hit by lightning/thunder. Stormborn at 17th grants flying speed while outdoors.' },
+            { name: 'War Domain', desc: 'Gods of war and combat. Heavy armor and martial weapon proficiency. War Priest lets you make extra weapon attacks as a bonus action. Channel Divinity: Guided Strike adds +10 to an attack roll. War God\'s Blessing at 6th grants allies +10 to attack rolls. Avatar of Battle at 17th grants resistance to nonmagical weapon damage.' }
+        ]
+    },
+    'druid': {
+        name: 'Druid',
+        hitDie: 'd8',
+        primaryAbility: 'Wisdom',
+        saves: 'Intelligence, Wisdom',
+        armor: 'Light armor, medium armor, shields (druids will not wear metal)',
+        weapons: 'Clubs, daggers, darts, javelins, maces, quarterstaffs, scimitars, sickles, slings, spears',
+        skills: 'Choose 2 from Arcana, Animal Handling, Insight, Medicine, Nature, Perception, Religion, Survival',
+        description: 'A priest of the Old Faith, wielding the powers of nature and adopting animal forms',
+        features: [
+            { level: 1, name: 'Druidic', desc: 'You know Druidic, the secret language of druids. You can speak and leave hidden messages in it. Creatures that know Druidic automatically spot such messages. Others must succeed on a DC 15 WIS (Perception) check to notice but can\'t decode without magic.' },
+            { level: 1, name: 'Spellcasting', desc: 'You can cast druid spells using WIS as your spellcasting ability. You prepare spells from the druid spell list each day. You can use a druidic focus as a spellcasting focus.' },
+            { level: 2, name: 'Wild Shape', desc: 'As an action, you can magically assume the shape of a beast you\'ve seen. You can use this twice, regaining uses after a short or long rest. You can stay in beast form for a number of hours equal to half your druid level (rounded down). CR limit starts at 1/4 with no flying/swimming, increasing at higher levels.' },
+            { level: 2, name: 'Druid Circle', desc: 'Choose a circle: Land, Moon, Dreams, Shepherd, Spores, or others. Your choice grants features at 2nd, 6th, 10th, and 14th level.' },
+            { level: 4, name: 'Wild Shape Improvement', desc: 'You can use Wild Shape to transform into a beast with CR 1/2 or lower that doesn\'t have a flying speed. You can also swim in beast form.' },
+            { level: 8, name: 'Wild Shape Improvement', desc: 'You can use Wild Shape to transform into a beast with CR 1 or lower. You can also fly in beast form.' },
+            { level: 18, name: 'Timeless Body', desc: 'The primal magic you wield slows your aging. For every 10 years that pass, your body ages only 1 year.' },
+            { level: 18, name: 'Beast Spells', desc: 'You can cast many druid spells in beast shape. You can perform somatic and verbal components while in beast form.' },
+            { level: 20, name: 'Archdruid', desc: 'You can use Wild Shape an unlimited number of times. Additionally, you can ignore verbal and somatic components of druid spells, as well as material components that lack a cost. You gain this benefit in both normal and beast form.' }
+        ],
+        subclasses: [
+            { name: 'Circle of the Land', desc: 'Druids tied to specific terrain types. Bonus cantrip at 2nd. Natural Recovery regains spell slots during short rest. Circle spells based on chosen land (Arctic, Coast, Desert, Forest, Grassland, Mountain, Swamp, Underdark). Land\'s Stride at 6th lets you move through nonmagical difficult terrain. Nature\'s Ward at 10th grants immunity to poison/disease and fey/elemental charm/frighten. Nature\'s Sanctuary at 14th causes beasts/plants to save or be unable to attack you.' },
+            { name: 'Circle of the Moon', desc: 'Fierce guardians who take on powerful beast forms. Combat Wild Shape as a bonus action, can expend spell slots to heal in beast form. CR limit becomes druid level divided by 3. Primal Strike at 6th makes beast attacks magical. Elemental Wild Shape at 10th lets you transform into elementals. Thousand Forms at 14th grants at-will alter self.' },
+            { name: 'Circle of Dreams', desc: 'Connected to the Feywild. Balm of the Summer Court heals and grants temp HP to allies. Hearth of Moonlight and Shadow at 6th creates a protected rest area. Hidden Paths at 10th lets you teleport and turn invisible. Walker in Dreams at 14th grants various teleportation and scrying abilities.' },
+            { name: 'Circle of the Shepherd', desc: 'Commune with spirits of nature. Speech of the Woods grants beast speech. Spirit Totem summons beneficial auras (Bear: temp HP, Hawk: advantage on attacks, Unicorn: advantage on detection and healing boost). Mighty Summoner at 6th makes summoned creatures stronger. Guardian Spirit at 10th heals summoned creatures. Faithful Summons at 14th auto-summons animals when you\'re reduced to 0 HP.' },
+            { name: 'Circle of Spores', desc: 'Find beauty in decay and leverage necrotic fungi. Halo of Spores deals poison damage to nearby creatures. Symbiotic Entity grants temp HP, extra necrotic damage, and extends Halo range. Fungal Infestation at 6th animates slain beasts/humanoids as zombies. Spreading Spores at 10th moves your Halo. Fungal Body at 14th grants immunities and critical immunity.' }
+        ]
+    },
+    'fighter': {
+        name: 'Fighter',
+        hitDie: 'd10',
+        primaryAbility: 'Strength or Dexterity',
+        saves: 'Strength, Constitution',
+        armor: 'All armor, shields',
+        weapons: 'Simple weapons, martial weapons',
+        skills: 'Choose 2 from Acrobatics, Animal Handling, Athletics, History, Insight, Intimidation, Perception, Survival',
+        description: 'A master of martial combat, skilled with a variety of weapons and armor',
+        features: [
+            { level: 1, name: 'Fighting Style', desc: 'Choose a fighting style: Archery (+2 to ranged attacks), Defense (+1 AC in armor), Dueling (+2 damage with one-handed weapon), Great Weapon Fighting (reroll 1s and 2s on damage), Protection (impose disadvantage on attacks against allies), or Two-Weapon Fighting (add ability modifier to off-hand damage).' },
+            { level: 1, name: 'Second Wind', desc: 'As a bonus action, regain HP equal to 1d10 + fighter level. You can use this once, regaining the use after a short or long rest.' },
+            { level: 1, name: 'Weapon Mastery', desc: '2024 PHB: You gain mastery with 3 weapons of your choice. When you attack with a weapon you have mastery with, you can use that weapon\'s special mastery property. You gain mastery with additional weapons at higher levels (4 at 4th level, 5 at 10th level).' },
+            { level: 2, name: 'Action Surge (one use)', desc: 'You can push yourself beyond normal limits. On your turn, you can take one additional action. You can use this once, regaining the use after a short or long rest.' },
+            { level: 3, name: 'Martial Archetype', desc: 'Choose an archetype: Champion, Battle Master, Eldritch Knight, or others. Your archetype grants features at 3rd, 7th, 10th, 15th, and 18th level.' },
+            { level: 5, name: 'Extra Attack', desc: 'You can attack twice, instead of once, when you take the Attack action on your turn.' },
+            { level: 9, name: 'Indomitable (one use)', desc: 'You can reroll a failed saving throw. You must use the new roll. You can use this once, regaining the use after a long rest.' },
+            { level: 11, name: 'Extra Attack (2)', desc: 'You can attack three times when you take the Attack action.' },
+            { level: 13, name: 'Indomitable (two uses)', desc: 'You can use Indomitable twice between long rests.' },
+            { level: 17, name: 'Action Surge (two uses)', desc: 'You can use Action Surge twice before needing a rest, but only once per turn.' },
+            { level: 17, name: 'Indomitable (three uses)', desc: 'You can use Indomitable three times between long rests.' },
+            { level: 20, name: 'Extra Attack (3)', desc: 'You can attack four times when you take the Attack action.' }
+        ],
+        subclasses: [
+            { name: 'Champion', desc: 'Focuses on raw physical power. Improved Critical at 3rd makes you crit on 19-20. Remarkable Athlete at 7th adds half proficiency to STR/DEX/CON checks and increases running jump distance. Additional Fighting Style at 10th. Superior Critical at 15th makes you crit on 18-20. Survivor at 18th heals you at start of turn if below half HP.' },
+            { name: 'Battle Master', desc: 'Employs martial techniques through superiority dice. Gain 4 maneuvers from a list (Trip Attack, Riposte, Parry, Precision Attack, etc.) and 4 d8 superiority dice. Student of War grants tool proficiency. Know Your Enemy at 7th reveals creature capabilities. Additional superiority dice and maneuvers at higher levels. Dice become d10 at 10th, d12 at 18th.' },
+            { name: 'Eldritch Knight', desc: 'Combines martial prowess with wizard magic. Spellcasting using INT (draws from wizard spell list). Weapon Bond at 3rd prevents disarming. War Magic at 7th lets you cast a cantrip and make a weapon attack. Eldritch Strike at 10th gives enemies disadvantage on saves against your spells. Arcane Charge at 15th lets you teleport when you Action Surge. Improved War Magic at 18th allows spell + attack.' },
+            { name: 'Samurai', desc: 'Embodies the ideals of honor and discipline. Fighting Spirit grants temp HP and advantage on attacks. Elegant Courtier at 7th adds WIS to CHA (Persuasion) checks and grants WIS save proficiency. Tireless Spirit at 10th regains Fighting Spirit on initiative if expended. Rapid Strike at 15th trades advantage for an extra attack. Strength Before Death at 18th lets you take a full turn immediately when reduced to 0 HP.' },
+            { name: 'Cavalier', desc: 'Superior mounted combatant and defensive warrior. Bonus proficiency, Born to the Saddle, and Unwavering Mark at 3rd. Warding Maneuver at 7th lets you protect allies. Hold the Line at 10th reduces enemy speed to 0 on opportunity attacks. Ferocious Charger at 15th adds damage when moving and attacking. Vigilant Defender at 18th grants extra opportunity attacks.' }
+        ]
+    },
+    'monk': {
+        name: 'Monk',
+        hitDie: 'd8',
+        primaryAbility: 'Dexterity and Wisdom',
+        saves: 'Strength, Dexterity',
+        armor: 'None',
+        weapons: 'Simple weapons, shortswords',
+        skills: 'Choose 2 from Acrobatics, Athletics, History, Insight, Religion, Stealth',
+        description: 'A master of martial arts, harnessing the power of the body in pursuit of physical and spiritual perfection',
+        features: [
+            { level: 1, name: 'Unarmored Defense', desc: 'While not wearing armor or wielding a shield, your AC equals 10 + DEX modifier + WIS modifier.' },
+            { level: 1, name: 'Martial Arts', desc: 'You can use DEX instead of STR for attack/damage rolls of unarmed strikes and monk weapons. You can roll a d4 for damage instead of normal damage (die increases at higher levels). When you use Attack action with unarmed strike or monk weapon, you can make one unarmed strike as a bonus action.' },
+            { level: 1, name: 'Weapon Mastery', desc: '2024 PHB: You gain mastery with 2 weapons of your choice (typically simple melee weapons or shortswords). When you attack with a weapon you have mastery with, you can use that weapon\'s special mastery property. You gain mastery with additional weapons at higher levels (3 at 4th level, 4 at 10th level).' },
+            { level: 2, name: 'Focus Points', desc: 'You gain Focus Points equal to your monk level. Spend Focus Points to use: Flurry of Blows (2 unarmed strikes as bonus action). Patient Defense: Disengage as bonus action (free), or spend 1 Focus Point to Disengage AND Dodge as bonus action. Step of the Wind: Dash as bonus action (free), or spend 1 Focus Point to Disengage AND Dash as bonus action with doubled jump distance. Regain all Focus Points on short or long rest.' },
+            { level: 2, name: 'Unarmored Movement', desc: 'Your speed increases by 10 feet while not wearing armor or wielding a shield. This bonus increases at certain monk levels. At 9th level, you gain the ability to move along vertical surfaces and across liquids.' },
+            { level: 3, name: 'Monastic Tradition', desc: 'Choose a tradition: Open Hand, Shadow, Four Elements, Long Death, Sun Soul, or others. Your tradition grants features at 3rd, 6th, 11th, and 17th level.' },
+            { level: 3, name: 'Deflect Missiles', desc: 'You can use your reaction to deflect or catch a missile when hit by a ranged weapon attack. Reduce damage by 1d10 + DEX modifier + monk level. If damage reduced to 0, you can catch it and spend 1 Focus Point to throw it back.' },
+            { level: 4, name: 'Slow Fall', desc: 'You can use your reaction when you fall to reduce falling damage by an amount equal to 5 times your monk level.' },
+            { level: 5, name: 'Extra Attack', desc: 'You can attack twice when you take the Attack action.' },
+            { level: 5, name: 'Stunning Strike', desc: 'When you hit with a melee weapon attack, you can spend 1 Focus Point to attempt a stunning strike. Target must succeed on a CON save or be stunned until the end of your next turn.' },
+            { level: 6, name: 'Empowered Strikes', desc: 'Your unarmed strikes count as magical for overcoming resistance and immunity to nonmagical attacks and damage.' },
+            { level: 7, name: 'Evasion', desc: 'When subjected to an effect that allows a DEX save for half damage, you take no damage on success and half damage on failure.' },
+            { level: 7, name: 'Stillness of Mind', desc: 'You can use your action to end one effect on yourself that is causing you to be charmed or frightened.' },
+            { level: 10, name: 'Purity of Body', desc: 'You are immune to disease and poison.' },
+            { level: 13, name: 'Tongue of the Sun and Moon', desc: 'You can understand all spoken languages and any creature that understands a language can understand what you say.' },
+            { level: 14, name: 'Diamond Soul', desc: 'You gain proficiency in all saving throws. When you fail a save, you can spend 1 Focus Point to reroll it and take the second result.' },
+            { level: 15, name: 'Perfect Focus', desc: 'When you roll Initiative and have 4 or fewer Focus Points and don\'t use Uncanny Metabolism, you regain expended Focus Points until you have 4.' },
+            { level: 18, name: 'Empty Body', desc: 'You can spend 4 Focus Points to become invisible for 1 minute and gain resistance to all damage except force. You can also spend 8 Focus Points to cast astral projection without material components.' },
+            { level: 20, name: 'Body and Mind', desc: 'You have developed your body and mind to new heights. Your Dexterity and Wisdom scores increase by 4, to a maximum of 25.' }
+        ],
+        subclasses: [
+            { name: 'Way of the Open Hand', desc: 'Ultimate masters of martial arts combat. Open Hand Technique adds effects to Flurry of Blows (knock prone, push, prevent reactions). Wholeness of Body at 6th heals yourself as action. Tranquility at 11th grants sanctuary-like effect after long rest. Quivering Palm at 17th can kill with focused vibrations (spend 3 Focus Points, target makes CON save or drops to 0 HP).' },
+            { name: 'Way of Shadow', desc: 'Employ stealth and subterfuge. Gain minor illusion cantrip. Shadow Arts lets you spend 2 Focus Points to cast darkness, darkvision, pass without trace, or silence. Shadow Step at 6th teleports between shadows and grants advantage on next attack. Cloak of Shadows at 11th grants invisibility. Opportunist at 17th lets you attack when enemies near you get hit.' },
+            { name: 'Way of the Four Elements', desc: 'Harness elemental power. Discipline of the Elements grants elemental-themed abilities requiring Focus Points (Fangs of the Fire Snake, Fist of Unbroken Air, Shape the Flowing River, Sweeping Cinder Strike, etc.). Learn additional disciplines at 6th, 11th, and 17th level. Can cast spells like burning hands, fireball, or wall of fire using Focus Points.' },
+            { name: 'Way of the Long Death', desc: 'Touch of Death grants temp HP when you reduce a creature to 0 HP. Hour of Reaping at 6th frightens creatures within 30 feet as action. Mastery of Death at 11th lets you drop to 1 HP instead of 0 by spending 1 Focus Point. Touch of the Long Death at 17th deals massive necrotic damage for 5-10 Focus Points (2d10 per Focus Point).' },
+            { name: 'Way of the Sun Soul', desc: 'Channel radiant energy. Radiant Sun Bolt lets you make ranged spell attacks (30 feet) for radiant damage as monk weapons. Searing Arc Strike at 6th spends 2 Focus Points to cast burning hands (radiant). Searing Sunburst at 11th spends 2 Focus Points for AoE radiant damage. Sun Shield at 17th creates damaging light aura and grants resistance to radiant damage.' }
+        ]
+    },
+    'paladin': {
+        name: 'Paladin',
+        hitDie: 'd10',
+        primaryAbility: 'Strength and Charisma',
+        saves: 'Wisdom, Charisma',
+        armor: 'All armor, shields',
+        weapons: 'Simple weapons, martial weapons',
+        skills: 'Choose 2 from Athletics, Insight, Intimidation, Medicine, Persuasion, Religion',
+        description: 'A holy warrior bound to a sacred oath, combining martial might with divine magic',
+        features: [
+            { level: 1, name: 'Divine Sense', desc: 'As an action, detect celestials, fiends, and undead within 60 feet (unless behind total cover). Also detect consecrated or desecrated locations. You can use this a number of times equal to 1 + CHA modifier, regaining uses after a long rest.' },
+            { level: 1, name: 'Lay on Hands', desc: 'You have a pool of healing power equal to 5 × paladin level. As an action, touch a creature to restore HP up to the pool maximum. You can also cure one disease or neutralize one poison for 5 HP from the pool. Regain all HP after a long rest.' },
+            { level: 1, name: 'Weapon Mastery', desc: '2024 PHB: You gain mastery with 2 weapons of your choice. When you attack with a weapon you have mastery with, you can use that weapon\'s special mastery property. You gain mastery with additional weapons at higher levels (3 at 4th level, 4 at 10th level).' },
+            { level: 2, name: 'Fighting Style', desc: 'Choose a fighting style: Defense (+1 AC in armor), Dueling (+2 damage with one-handed weapon), Great Weapon Fighting (reroll 1s and 2s on damage), or Protection (impose disadvantage on attacks against allies).' },
+            { level: 2, name: 'Spellcasting', desc: 'You can cast paladin spells using CHA as your spellcasting ability. You prepare spells from the paladin spell list each day. You can use a holy symbol as a spellcasting focus.' },
+            { level: 2, name: 'Divine Smite', desc: 'As a bonus action after hitting with a melee weapon attack, you can expend one spell slot to deal extra radiant damage to the target: 2d8 for a 1st-level spell slot, plus 1d8 for each spell level higher than 1st (max 5d8). The damage increases by 1d8 if the target is an undead or fiend. You can use Divine Smite only once per turn.' },
+            { level: 3, name: 'Divine Health', desc: 'You are immune to disease due to divine magic flowing through you.' },
+            { level: 3, name: 'Sacred Oath', desc: 'Choose an oath: Devotion, Ancients, Vengeance, Conquest, Redemption, or others. Your oath grants spells and features at 3rd, 7th, 15th, and 20th level, plus Channel Divinity options.' },
+            { level: 5, name: 'Extra Attack', desc: 'You can attack twice when you take the Attack action.' },
+            { level: 6, name: 'Aura of Protection', desc: 'When you or a friendly creature within 10 feet must make a saving throw, they gain a bonus equal to your CHA modifier (minimum +1). You must be conscious. At 18th level, range increases to 30 feet.' },
+            { level: 10, name: 'Aura of Courage', desc: 'You and friendly creatures within 10 feet can\'t be frightened while you are conscious. At 18th level, range increases to 30 feet.' },
+            { level: 11, name: 'Improved Divine Smite', desc: 'You are so suffused with divine might that all your melee weapon strikes carry divine power. When you hit with a melee weapon, you deal an extra 1d8 radiant damage.' },
+            { level: 14, name: 'Cleansing Touch', desc: 'You can use your action to end one spell on yourself or one willing creature you touch. You can use this a number of times equal to your CHA modifier (minimum 1), regaining uses after a long rest.' },
+            { level: 18, name: 'Aura Improvements', desc: 'The range of your Aura of Protection and Aura of Courage increases to 30 feet.' }
+        ],
+        subclasses: [
+            { name: 'Oath of Devotion', desc: 'Ancient ideals of justice, virtue, and order. Sacred Weapon makes weapon attacks magical and adds CHA to attack rolls. Turn the Unholy repels fiends and undead. Aura of Devotion at 7th grants immunity to charm within aura. Purity of Spirit at 15th makes you always under protection from evil and good. Holy Nimbus at 20th creates radiant aura dealing damage to enemies.' },
+            { name: 'Oath of the Ancients', desc: 'Preserve light and life against forces of death. Nature\'s Wrath restrains creatures with spectral vines. Turn the Faithless repels fey and fiends. Aura of Warding at 7th grants resistance to spell damage. Undying Sentinel at 15th prevents death once per long rest. Elder Champion at 20th transforms you into an ancient force of nature.' },
+            { name: 'Oath of Vengeance', desc: 'Punish wrongdoers by any means necessary. Abjure Enemy frightens one creature. Vow of Enmity gives advantage against one foe. Relentless Avenger at 7th grants free movement after opportunity attack. Soul of Vengeance at 15th lets you react when vow target attacks. Avenging Angel at 20th grants flight and frightening aura.' },
+            { name: 'Oath of Conquest', desc: 'Crush the forces of chaos through strength. Conquering Presence frightens enemies. Guided Strike adds +10 to attack roll. Aura of Conquest at 7th reduces frightened enemies\' speed to 0 and deals psychic damage. Scornful Rebuke at 15th deals psychic damage to attackers. Invincible Conqueror at 20th grants resistance and extra attack.' },
+            { name: 'Oath of Redemption', desc: 'Believe violence is a last resort. Emissary of Peace grants +5 to CHA (Persuasion) for 10 minutes. Rebuke the Violent deals damage to those who harm others. Protective Spirit at 7th heals you at end of turn if below half HP. Aura of the Guardian at 15th lets you take damage for allies. Emissary of Redemption at 20th grants resistance and reflects damage to attackers.' }
+        ]
+    },
+    'ranger': {
+        name: 'Ranger',
+        hitDie: 'd10',
+        primaryAbility: 'Dexterity and Wisdom',
+        saves: 'Strength, Dexterity',
+        armor: 'Light armor, medium armor, shields',
+        weapons: 'Simple weapons, martial weapons',
+        skills: 'Choose 3 from Animal Handling, Athletics, Insight, Investigation, Nature, Perception, Stealth, Survival',
+        description: 'A warrior who uses martial prowess and nature magic to combat threats on the edges of civilization',
+        features: [
+            { level: 1, name: 'Favored Enemy', desc: 'Choose a type of favored enemy (aberrations, beasts, celestials, constructs, dragons, elementals, fey, fiends, giants, monstrosities, oozes, plants, or undead). You have advantage on WIS (Survival) checks to track them and INT checks to recall information. You learn one language of your choice. Choose additional favored enemies at 6th and 14th level.' },
+            { level: 1, name: 'Natural Explorer', desc: 'You are a master of navigating the natural world. Choose favored terrain. While traveling in it: difficult terrain doesn\'t slow your group, your group can\'t get lost except by magic, you remain alert to danger even while doing other activities, you can move stealthily at normal pace alone, you find twice as much food/water, and you learn exact number, sizes, and how long ago creatures passed. Choose additional favored terrains at 6th and 10th level.' },
+            { level: 1, name: 'Weapon Mastery', desc: '2024 PHB: You gain mastery with 2 weapons of your choice. When you attack with a weapon you have mastery with, you can use that weapon\'s special mastery property. You gain mastery with additional weapons at higher levels (3 at 4th level, 4 at 10th level).' },
+            { level: 2, name: 'Fighting Style', desc: 'Choose a fighting style: Archery (+2 to ranged attacks), Defense (+1 AC in armor), Dueling (+2 damage with one-handed weapon), or Two-Weapon Fighting (add ability modifier to off-hand damage).' },
+            { level: 2, name: 'Spellcasting', desc: 'You can cast ranger spells using WIS as your spellcasting ability. You know a number of spells from the ranger spell list.' },
+            { level: 3, name: 'Ranger Archetype', desc: 'Choose an archetype: Hunter, Beast Master, Gloom Stalker, Horizon Walker, Monster Slayer, or others. Your archetype grants features at 3rd, 7th, 11th, and 15th level.' },
+            { level: 3, name: 'Primeval Awareness', desc: 'You can use your action and expend one spell slot to sense whether any aberrations, celestials, dragons, elementals, fey, fiends, or undead are within 1 mile (or 6 miles in favored terrain). This doesn\'t reveal location or number.' },
+            { level: 5, name: 'Extra Attack', desc: 'You can attack twice when you take the Attack action.' },
+            { level: 8, name: 'Land\'s Stride', desc: 'Moving through nonmagical difficult terrain costs no extra movement. You can pass through nonmagical plants without being slowed and without taking damage if they have thorns, spines, etc. You have advantage on saves against magically created or manipulated plants.' },
+            { level: 10, name: 'Hide in Plain Sight', desc: 'You can spend 1 minute creating camouflage for yourself. Once camouflaged, you gain +10 to DEX (Stealth) checks while remaining still and not taking actions/reactions.' },
+            { level: 14, name: 'Vanish', desc: 'You can use the Hide action as a bonus action. You also can\'t be tracked by nonmagical means unless you choose to leave a trail.' },
+            { level: 18, name: 'Feral Senses', desc: 'You gain preternatural senses. You can attack creatures you can\'t see (no disadvantage). You are aware of invisible creatures within 30 feet unless they successfully hide from you.' },
+            { level: 20, name: 'Foe Slayer', desc: 'Once per turn when you hit a favored enemy, add your WIS modifier to the attack or damage roll.' }
+        ],
+        subclasses: [
+            { name: 'Hunter', desc: 'Masters of hunting dangerous game. Hunter\'s Prey at 3rd offers Colossus Slayer (extra d8 to damaged creatures), Giant Killer (reaction attack against Large+ creatures), or Horde Breaker (extra attack against another creature). Defensive Tactics at 7th. Multiattack at 11th. Superior Hunter\'s Defense at 15th grants Evasion, Stand Against the Tide, or Uncanny Dodge.' },
+            { name: 'Beast Master', desc: 'Bond with a beast companion. Ranger\'s Companion grants a Medium or smaller beast with CR 1/4 or less. It obeys your commands and acts on your initiative. Exceptional Training at 7th lets beast Dash/Disengage/Dodge/Help as bonus action. Bestial Fury at 11th lets companion attack twice. Share Spells at 15th lets you target companion with self spells.' },
+            { name: 'Gloom Stalker', desc: 'At home in darkest places. Dread Ambusher grants +10 feet speed in first turn, extra attack in first turn, and +1d8 damage on that attack. Umbral Sight at 3rd grants darkvision and invisibility to darkvision. Iron Mind at 7th grants WIS save proficiency. Stalker\'s Flurry at 11th lets you make another attack when you miss. Shadowy Dodge at 15th imposes disadvantage on attacks when you can see attacker.' },
+            { name: 'Horizon Walker', desc: 'Guards planar boundaries. Detect Portal senses nearby portals. Planar Warrior deals force damage as bonus action. Ethereal Step at 7th grants brief etherealness. Distant Strike at 11th teleports before each attack, extra attack if you hit 2+ creatures. Spectral Defense at 15th grants resistance as reaction.' },
+            { name: 'Monster Slayer', desc: 'Specialized in hunting creatures that threaten civilization. Hunter\'s Sense reveals creature\'s resistances/immunities. Slayer\'s Prey marks targets for extra d6 damage. Supernatural Defense at 7th adds 1d6 to saves against target\'s abilities and grants advantage on escaping grapple. Magic-User\'s Nemesis at 11th foils enemy spells. Slayer\'s Counter at 15th lets you attack when targeted by spell.' }
+        ]
+    },
+    'rogue': {
+        name: 'Rogue',
+        hitDie: 'd8',
+        primaryAbility: 'Dexterity',
+        saves: 'Dexterity, Intelligence',
+        armor: 'Light armor',
+        weapons: 'Simple weapons, hand crossbows, longswords, rapiers, shortswords',
+        skills: 'Choose 4 from Acrobatics, Athletics, Deception, Insight, Intimidation, Investigation, Perception, Performance, Persuasion, Sleight of Hand, Stealth',
+        description: 'A scoundrel who uses stealth and trickery to overcome obstacles and enemies',
+        features: [
+            { level: 1, name: 'Expertise', desc: 'Choose two skill proficiencies or one skill and thieves\' tools. Your proficiency bonus is doubled for any ability check using those proficiencies. At 6th level, choose two more.' },
+            { level: 1, name: 'Sneak Attack', desc: 'Once per turn, deal extra damage to one creature you hit with an attack if you have advantage (or an ally is within 5 feet of target and you don\'t have disadvantage). Must use finesse or ranged weapon. Extra damage starts at 1d6 and increases as you level (2d6 at 3rd, 3d6 at 5th, etc., up to 10d6 at 19th).' },
+            { level: 1, name: 'Thieves\' Cant', desc: 'You know thieves\' cant, a secret mix of dialect, jargon, and code. It takes four times longer to convey a message this way. You also understand secret signs and symbols used to convey short messages.' },
+            { level: 1, name: 'Weapon Mastery', desc: '2024 PHB: You gain mastery with 2 weapons of your choice (typically finesse or ranged weapons). When you attack with a weapon you have mastery with, you can use that weapon\'s special mastery property. You gain mastery with additional weapons at higher levels (3 at 4th level, 4 at 10th level).' },
+            { level: 2, name: 'Cunning Action', desc: 'You can use a bonus action to take the Dash, Disengage, or Hide action.' },
+            { level: 3, name: 'Roguish Archetype', desc: 'Choose an archetype: Thief, Assassin, Arcane Trickster, or others. Your archetype grants features at 3rd, 9th, 13th, and 17th level.' },
+            { level: 5, name: 'Uncanny Dodge', desc: 'When an attacker you can see hits you with an attack, you can use your reaction to halve the attack\'s damage against you.' },
+            { level: 7, name: 'Evasion', desc: 'When subjected to an effect that allows a DEX save for half damage, you take no damage on success and half damage on failure.' },
+            { level: 11, name: 'Reliable Talent', desc: 'Whenever you make an ability check using a skill you\'re proficient in, you treat a d20 roll of 9 or lower as a 10.' },
+            { level: 14, name: 'Blindsense', desc: 'If you can hear, you are aware of the location of any hidden or invisible creature within 10 feet of you.' },
+            { level: 15, name: 'Slippery Mind', desc: 'You gain proficiency in WIS saving throws.' },
+            { level: 18, name: 'Elusive', desc: 'No attack roll has advantage against you while you aren\'t incapacitated.' },
+            { level: 20, name: 'Stroke of Luck', desc: 'If you miss with an attack roll, you can turn it into a hit. Alternatively, if you fail an ability check, you can treat the d20 roll as a 20. Once used, can\'t use again until you finish a short or long rest.' }
+        ],
+        subclasses: [
+            { name: 'Thief', desc: 'Masters of infiltration and treasure hunting. Fast Hands lets you use Cunning Action to make DEX (Sleight of Hand) checks, use thieves\' tools, or Use an Object. Second-Story Work at 3rd grants climbing speed equal to normal speed and increases running jump by DEX modifier feet. Supreme Sneak at 9th grants advantage on Stealth if you move no more than half speed. Use Magic Device at 13th lets you use magic items. Thief\'s Reflexes at 17th lets you take two turns in first round of combat.' },
+            { name: 'Assassin', desc: 'Masters of dealing sudden death. Bonus proficiencies with disguise and poisoner\'s kits. Assassinate at 3rd grants advantage on attacks against creatures that haven\'t acted yet in combat, and hits against surprised creatures are critical hits. Infiltration Expertise at 9th creates false identities. Imposter at 13th lets you mimic others\' speech, writing, and behavior. Death Strike at 17th doubles damage against surprised creatures that fail CON save.' },
+            { name: 'Arcane Trickster', desc: 'Combine roguish skills with magical study. Spellcasting using INT (draws from wizard spell list, focuses on enchantment and illusion). Mage Hand Legerdemain at 3rd makes mage hand invisible and lets you pick locks, disarm traps, and pickpocket. Magical Ambush at 9th grants disadvantage on saves against spells when you\'re hidden. Versatile Trickster at 13th uses mage hand to distract for advantage. Spell Thief at 17th steals knowledge of spells used against you.' },
+            { name: 'Inquisitive', desc: 'Excel at rooting out secrets. Ear for Deceit gives minimum roll for Insight to detect lies. Eye for Detail lets you use Perception/Investigation as bonus action. Insightful Fighting at 3rd grants Sneak Attack without advantage if you succeed on Insight vs Deception. Steady Eye at 9th grants advantage on Perception/Investigation when moving at half speed. Unerring Eye at 13th senses illusions and shapeshifters. Eye for Weakness at 17th adds 3d6 to Sneak Attack if you use Insightful Fighting.' },
+            { name: 'Swashbuckler', desc: 'Focused on elegant dueling. Fancy Footwork prevents opportunity attacks from creatures you attacked. Rakish Audacity adds CHA to initiative and lets you Sneak Attack targets 1-on-1. Panache at 9th charms or draws attention. Elegant Maneuver at 13th adds bonus action Dash/Disengage/Hide. Master Duelist at 17th grants advantage on attack if you miss.' }
+        ]
+    },
+    'sorcerer': {
+        name: 'Sorcerer',
+        hitDie: 'd6',
+        primaryAbility: 'Charisma',
+        saves: 'Constitution, Charisma',
+        armor: 'None',
+        weapons: 'Daggers, darts, slings, quarterstaffs, light crossbows',
+        skills: 'Choose 2 from Arcana, Deception, Insight, Intimidation, Persuasion, Religion',
+        description: 'A spellcaster who draws on inherent magic from a gift or bloodline',
+        features: [
+            { level: 1, name: 'Spellcasting', desc: 'You can cast sorcerer spells using CHA as your spellcasting ability. You know a number of spells from the sorcerer spell list and can cast them using spell slots. You can use an arcane focus as a spellcasting focus.' },
+            { level: 1, name: 'Sorcerous Origin', desc: 'Choose the origin of your power: Draconic Bloodline, Wild Magic, Divine Soul, Shadow Magic, Storm Sorcery, or others. Your origin grants features at 1st, 6th, 14th, and 18th level.' },
+            { level: 2, name: 'Font of Magic', desc: 'You have sorcery points equal to your sorcerer level. You can transform sorcery points into spell slots and vice versa. Create spell slots (2 points = 1st level, 3 = 2nd, 5 = 3rd, 6 = 4th, 7 = 5th). Convert slots to points (slot level = points gained). Regain all sorcery points on a long rest.' },
+            { level: 3, name: 'Metamagic', desc: 'You gain the ability to twist spells. Choose two Metamagic options from: Careful Spell (protect allies from AoE), Distant Spell (double range), Empowered Spell (reroll damage dice), Extended Spell (double duration), Heightened Spell (impose disadvantage on save), Quickened Spell (cast as bonus action), Subtle Spell (no components), or Twinned Spell (target second creature). Learn another at 10th and 17th level.' },
+            { level: 10, name: 'Metamagic (2)', desc: 'You learn a third Metamagic option.' },
+            { level: 17, name: 'Metamagic (3)', desc: 'You learn a fourth Metamagic option.' },
+            { level: 20, name: 'Sorcerous Restoration', desc: 'When you finish a short rest, you regain 4 expended sorcery points.' }
+        ],
+        subclasses: [
+            { name: 'Draconic Bloodline', desc: 'Magic stems from draconic heritage. Choose dragon type for damage resistance and bonus spells. Dragon Ancestor grants +1 HP per level and AC = 13 + DEX when not wearing armor. Elemental Affinity at 6th adds CHA modifier to one damage roll of your dragon type and grants resistance. Dragon Wings at 14th grants flying speed. Draconic Presence at 18th creates charm/frighten aura.' },
+            { name: 'Wild Magic', desc: 'Magic is chaotic and unpredictable. Wild Magic Surge may occur when you cast 1st level+ spells (DM rolls d20, on 1 roll on surge table). Tides of Chaos at 1st grants advantage on one check/save/attack, recharge when surge occurs. Bend Luck at 6th adds/subtracts d4 from creature\'s roll. Controlled Chaos at 14th rolls twice on surge table. Spell Bombardment at 18th adds extra damage die when you roll max on damage dice.' },
+            { name: 'Divine Soul', desc: 'Magic derives from divine source. Divine Magic adds cleric spell list to spells you can learn. Favored by the Gods at 1st lets you add 2d4 to failed save/attack. Empowered Healing at 6th rerolls healing dice. Otherworldly Wings at 14th grants flying speed. Unearthly Recovery at 18th heals you to half HP when reduced to 0 (once per long rest).' },
+            { name: 'Shadow Magic', desc: 'Power from the Shadowfell. Eyes of the Dark grants darkvision 120 feet and cast darkness with sorcery points. Strength of the Grave at 1st lets you make CHA save to drop to 1 HP instead of 0. Hound of Ill Omen at 6th summons shadow hound to hunt a creature. Shadow Walk at 14th teleports through shadows. Umbral Form at 18th transforms into shadow form with resistance and phasing.' },
+            { name: 'Storm Sorcery', desc: 'Innate magic of the storm. Wind Speaker grants Primordial language. Tempestuous Magic at 1st lets you fly 10 feet before/after casting 1st level+ spell. Heart of the Storm at 6th grants lightning/thunder resistance and damages nearby creatures when you cast lightning/thunder spells. Storm Guide at 6th controls wind and weather. Storm\'s Fury at 14th deals lightning to attackers. Wind Soul at 18th grants immunity, flying speed, and ability to fly others.' }
+        ]
+    },
+    'warlock': {
+        name: 'Warlock',
+        hitDie: 'd8',
+        primaryAbility: 'Charisma',
+        saves: 'Wisdom, Charisma',
+        armor: 'Light armor',
+        weapons: 'Simple weapons',
+        skills: 'Choose 2 from Arcana, Deception, History, Intimidation, Investigation, Nature, Religion',
+        description: 'A wielder of magic derived from a bargain with an extraplanar entity',
+        features: [
+            { level: 1, name: 'Otherworldly Patron', desc: 'You have made a pact with a powerful entity: the Archfey, the Fiend, the Great Old One, the Celestial, the Hexblade, or others. Your patron grants you features at 1st, 6th, 10th, and 14th level, plus an expanded spell list.' },
+            { level: 1, name: 'Pact Magic', desc: 'You can cast warlock spells using CHA as your spellcasting ability. You know a number of spells and have spell slots that recharge on a short or long rest. Unlike other casters, you have fewer slots but they\'re all the same level (scaling up to 5th level). You can use an arcane focus as a spellcasting focus.' },
+            { level: 2, name: 'Eldritch Invocations', desc: 'You learn two eldritch invocations (Agonizing Blast, Armor of Shadows, Beast Speech, Beguiling Influence, Devil\'s Sight, Eldritch Sight, Eldritch Spear, Eyes of the Rune Keeper, Fiendish Vigor, Gaze of Two Minds, Mask of Many Faces, Misty Visions, Repelling Blast, Thief of Five Fates, etc.). Some have prerequisites. You learn additional invocations at 5th, 7th, 9th, 12th, 15th, and 18th level, and can replace one when you gain a level.' },
+            { level: 3, name: 'Pact Boon', desc: 'Your patron grants a special boon. Pact of the Chain (familiar with special forms and abilities), Pact of the Blade (create magical weapon as action), or Pact of the Tome (Book of Shadows with 3 cantrips from any class).' },
+            { level: 11, name: 'Mystic Arcanum (6th level)', desc: 'Your patron grants you a magical secret. Choose one 6th-level spell from the warlock spell list. You can cast it once without a spell slot, regaining the ability after a long rest.' },
+            { level: 13, name: 'Mystic Arcanum (7th level)', desc: 'Choose one 7th-level spell from the warlock spell list. You can cast it once without a spell slot, regaining the ability after a long rest.' },
+            { level: 15, name: 'Mystic Arcanum (8th level)', desc: 'Choose one 8th-level spell from the warlock spell list. You can cast it once without a spell slot, regaining the ability after a long rest.' },
+            { level: 17, name: 'Mystic Arcanum (9th level)', desc: 'Choose one 9th-level spell from the warlock spell list. You can cast it once without a spell slot, regaining the ability after a long rest.' },
+            { level: 20, name: 'Eldritch Master', desc: 'You can draw on your inner reserve of mystical power. You can spend 1 minute entreating your patron to regain all expended spell slots. Once used, you can\'t do so again until you finish a long rest.' }
+        ],
+        subclasses: [
+            { name: 'The Archfey', desc: 'Pact with a lord/lady of the fey. Expanded spell list includes faerie fire, sleep, calm emotions, phantasmal force, blink, plant growth. Fey Presence at 1st frightens or charms nearby creatures. Misty Escape at 6th turns you invisible and teleports when damaged. Beguiling Defenses at 10th grants immunity to charm and reflects charm back. Dark Delirium at 14th charms creatures into illusory realm.' },
+            { name: 'The Fiend', desc: 'Pact with demon, devil, or other fiendish entity. Expanded spells include burning hands, command, scorching ray, suggestion, fireball, stinking cloud. Dark One\'s Blessing grants temp HP when you reduce creatures to 0 HP. Dark One\'s Own Luck at 6th adds d10 to check/save. Fiendish Resilience at 10th grants damage resistance (choose type each rest). Hurl Through Hell at 14th banishes target through lower planes for massive psychic damage.' },
+            { name: 'The Great Old One', desc: 'Pact with alien entity. Expanded spells include dissonant whispers, Tasha\'s hideous laughter, detect thoughts, phantasmal force, clairvoyance, sending. Awakened Mind at 1st grants telepathy 30 feet. Entropic Ward at 6th imposes disadvantage on attacks and grants advantage on one attack. Thought Shield at 10th grants psychic resistance and reflects psychic damage. Create Thrall at 14th charms incapacitated humanoid permanently.' },
+            { name: 'The Celestial', desc: 'Pact with empyrean, ki-rin, unicorn, or other celestial. Expanded spells include cure wounds, guiding bolt, flaming sphere, lesser restoration, daylight, revivify. Bonus light and sacred flame cantrips. Healing Light grants pool of d6s to heal as bonus action. Radiant Soul at 6th adds CHA to fire/radiant spell damage and resistance to radiant. Celestial Resilience at 10th grants temp HP to you and allies on short/long rest. Searing Vengeance at 14th lets you explode with radiant damage when making death saves.' },
+            { name: 'The Hexblade', desc: 'Pact with mysterious entity from Shadowfell. Expanded spells include shield, wrathful smite, blur, branding smite, blink, elemental weapon. Hexblade\'s Curse marks enemies for bonus damage, crit on 19-20, and heal on kill. Hex Warrior at 1st uses CHA for weapon attacks with one weapon and grants medium armor/shield/martial weapons. Accursed Specter at 6th raises slain humanoids as specters. Armor of Hexes at 10th makes cursed targets miss you 50% of the time. Master of Hexes at 14th transfers curse to new target when cursed creature dies.' }
+        ]
+    },
+    'wizard': {
+        name: 'Wizard',
+        hitDie: 'd6',
+        primaryAbility: 'Intelligence',
+        saves: 'Intelligence, Wisdom',
+        armor: 'None',
+        weapons: 'Daggers, darts, slings, quarterstaffs, light crossbows',
+        skills: 'Choose 2 from Arcana, History, Insight, Investigation, Medicine, Religion',
+        description: 'A scholarly magic-user capable of manipulating the structures of reality',
+        features: [
+            { level: 1, name: 'Spellcasting', desc: 'You can cast wizard spells using INT as your spellcasting ability. You have a spellbook containing your spells. You prepare spells from your spellbook each day. You can copy spells you find into your spellbook (50gp and 2 hours per spell level). You can use an arcane focus as a spellcasting focus.' },
+            { level: 1, name: 'Arcane Recovery', desc: 'During a short rest, you can recover expended spell slots. The spell slots can have a combined level equal to or less than half your wizard level (rounded up), and none can be 6th level or higher. You can use this once per day.' },
+            { level: 2, name: 'Arcane Tradition', desc: 'Choose a tradition: Abjuration, Conjuration, Divination, Enchantment, Evocation, Illusion, Necromancy, Transmutation, or others. Your tradition grants features at 2nd, 6th, 10th, and 14th level.' },
+            { level: 18, name: 'Spell Mastery', desc: 'Choose one 1st-level and one 2nd-level spell in your spellbook. You can cast them at their lowest level without expending a spell slot when you have them prepared. You can change these spells by studying for 8 hours.' },
+            { level: 20, name: 'Signature Spells', desc: 'Choose two 3rd-level spells in your spellbook as your signature spells. You always have them prepared and can cast each once at 3rd level without expending a spell slot. When you do so, you can\'t do so again until you finish a short or long rest.' }
+        ],
+        subclasses: [
+            { name: 'School of Abjuration', desc: 'Specialist in protective magic. Abjuration Savant reduces spell copy cost/time. Arcane Ward at 2nd creates protective barrier with 2×wizard level + INT HP, recharges when you cast abjuration spells. Projected Ward at 6th lets you shield others with your ward. Improved Abjuration at 10th adds proficiency bonus when countering spells. Spell Resistance at 14th grants advantage on spell saves and resistance to spell damage.' },
+            { name: 'School of Conjuration', desc: 'Focus on summoning and teleportation. Conjuration Savant reduces spell copy cost/time. Minor Conjuration at 2nd creates inanimate objects. Benign Transposition at 6th lets you teleport or swap places. Focused Conjuration at 10th prevents concentration loss from damage when concentrating on conjuration. Durable Summons at 14th grants temp HP to conjured/summoned creatures.' },
+            { name: 'School of Divination', desc: 'Peer into the future and uncover secrets. Divination Savant reduces spell copy cost/time. Portent at 2nd lets you roll 2d20 each day and replace any roll with one of those results. Expert Divination at 6th recovers spell slots when casting divination spells. The Third Eye at 10th grants darkvision, ethereal sight, greater comprehension, or see invisibility. Greater Portent at 14th grants 3 portent rolls instead of 2.' },
+            { name: 'School of Enchantment', desc: 'Masters of charming and mind control. Enchantment Savant reduces spell copy cost/time. Hypnotic Gaze at 2nd charms creatures as action. Instinctive Charm at 6th redirects attacks to charm attacker. Split Enchantment at 10th lets you target two creatures with single-target enchantments. Alter Memories at 14th makes charmed creatures forget time spent charmed.' },
+            { name: 'School of Evocation', desc: 'Focused on destructive elemental magic. Evocation Savant reduces spell copy cost/time. Sculpt Spells at 2nd lets allies automatically succeed on saves and take no damage from your evocations. Potent Cantrip at 6th makes creatures take half damage from your cantrips even on a successful save. Empowered Evocation at 10th adds INT modifier to one damage roll of wizard evocation spells. Overchannel at 14th maximizes spell damage (with consequences).' },
+            { name: 'School of Illusion', desc: 'Weave reality from imagination. Illusion Savant reduces spell copy cost/time. Improved Minor Illusion at 2nd adds sound and image to minor illusion. Malleable Illusions at 6th lets you change illusions as action. Illusory Self at 10th creates duplicate to take attacks for you. Illusory Reality at 14th makes one object in illusion temporarily real.' },
+            { name: 'School of Necromancy', desc: 'Explore the forces of life, death, and undeath. Necromancy Savant reduces spell copy cost/time. Grim Harvest at 2nd heals you when your spells kill creatures. Undead Thralls at 6th adds creatures to animate dead/create undead and gives them extra HP/damage. Inured to Undeath at 10th grants necrotic resistance and max HP can\'t be reduced. Command Undead at 14th attempts to control undead with Arcana check.' },
+            { name: 'School of Transmutation', desc: 'Change matter and energy. Transmutation Savant reduces spell copy cost/time. Minor Alchemy at 2nd transforms materials. Transmuter\'s Stone at 6th creates stone granting darkvision, speed, proficiency, or resistance. Shapechanger at 10th lets you cast polymorph on yourself. Master Transmuter at 14th consumes stone for major transmutation (major transformation, panacea, restore life/youth, or raise dead).' }
+        ]
+    }
+};
+
+// Display class information
+function displayClassInfo() {
+    const select = document.getElementById('classInfoSelect');
+    const display = document.getElementById('classInfoDisplay');
+    const classKey = select.value;
+
+    if (!classKey || !classInfo[classKey]) {
+        display.innerHTML = '<p class="no-selection">Select a class to view its information</p>';
+        return;
+    }
+
+    const info = classInfo[classKey];
+    let html = `
+        <div class="reference-card">
+            <h3>${info.name}</h3>
+            ${info.description ? `<p style="font-style: italic; margin-bottom: 15px; color: var(--text-dim);">${info.description}</p>` : ''}
+            <div class="reference-detail">
+                <strong>Hit Die:</strong> ${info.hitDie}
+            </div>
+            <div class="reference-detail">
+                <strong>Primary Ability:</strong> ${info.primaryAbility}
+            </div>
+            <div class="reference-detail">
+                <strong>Saving Throw Proficiencies:</strong> ${info.saves}
+            </div>
+            ${info.armor ? `<div class="reference-detail"><strong>Armor Proficiencies:</strong> ${info.armor}</div>` : ''}
+            ${info.weapons ? `<div class="reference-detail"><strong>Weapon Proficiencies:</strong> ${info.weapons}</div>` : ''}
+            ${info.skills ? `<div class="reference-detail"><strong>Skills:</strong> ${info.skills}</div>` : ''}
+        </div>
+
+        <div class="reference-card">
+            <h3>Class Features</h3>
+    `;
+
+    info.features.forEach(feature => {
+        if (feature.desc) {
+            html += `
+                <div class="reference-detail" style="margin-bottom: 15px;">
+                    <strong>Level ${feature.level} - ${feature.name}:</strong> ${feature.desc}
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="reference-detail">
+                    <strong>Level ${feature.level}:</strong> ${feature.name}
+                </div>
+            `;
+        }
+    });
+
+    html += '</div>';
+
+    if (info.subclasses && info.subclasses.length > 0) {
+        html += `
+            <div class="reference-card">
+                <h3>Subclasses</h3>
+        `;
+
+        info.subclasses.forEach(subclass => {
+            if (typeof subclass === 'object') {
+                html += `
+                    <div class="reference-detail" style="margin-bottom: 15px;">
+                        <strong>${subclass.name}:</strong> ${subclass.desc}
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="reference-detail">
+                        ${subclass}
+                    </div>
+                `;
+            }
+        });
+
+        html += '</div>';
+    }
+
+    display.innerHTML = html;
+}
+
+// Shop Data
+const shopData = {
+    weapons: {
+        name: 'Weapons',
+        items: [
+            { name: 'Club', subcategory: 'Simple Melee', cost: '0.1 gp', weight: '2 lb', damage: '1d4 bludgeoning', properties: 'Light', village: true, town: true, city: true },
+            { name: 'Dagger', subcategory: 'Simple Melee', cost: '2 gp', weight: '1 lb', damage: '1d4 piercing', properties: 'Finesse, Light, Thrown (20/60)', village: true, town: true, city: true },
+            { name: 'Greatclub', subcategory: 'Simple Melee', cost: '0.2 gp', weight: '10 lb', damage: '1d8 bludgeoning', properties: 'Two-Handed', village: true, town: true, city: true },
+            { name: 'Handaxe', subcategory: 'Simple Melee', cost: '5 gp', weight: '2 lb', damage: '1d6 slashing', properties: 'Light, Thrown (20/60)', village: true, town: true, city: true },
+            { name: 'Javelin', subcategory: 'Simple Melee', cost: '0.5 gp', weight: '2 lb', damage: '1d6 piercing', properties: 'Thrown (30/120)', village: true, town: true, city: true },
+            { name: 'Light Hammer', subcategory: 'Simple Melee', cost: '2 gp', weight: '2 lb', damage: '1d4 bludgeoning', properties: 'Light, Thrown (20/60)', town: true, city: true },
+            { name: 'Mace', subcategory: 'Simple Melee', cost: '5 gp', weight: '4 lb', damage: '1d6 bludgeoning', properties: '—', town: true, city: true },
+            { name: 'Quarterstaff', subcategory: 'Simple Melee', cost: '0.2 gp', weight: '4 lb', damage: '1d6 bludgeoning', properties: 'Versatile (1d8)', village: true, town: true, city: true },
+            { name: 'Sickle', subcategory: 'Simple Melee', cost: '1 gp', weight: '2 lb', damage: '1d4 slashing', properties: 'Light', village: true, town: true, city: true },
+            { name: 'Spear', subcategory: 'Simple Melee', cost: '1 gp', weight: '3 lb', damage: '1d6 piercing', properties: 'Thrown (20/60), Versatile (1d8)', village: true, town: true, city: true },
+            { name: 'Light Crossbow', subcategory: 'Simple Ranged', cost: '25 gp', weight: '5 lb', damage: '1d8 piercing', properties: 'Ammunition (80/320), Loading, Two-Handed', town: true, city: true },
+            { name: 'Dart', subcategory: 'Simple Ranged', cost: '0.05 gp', weight: '0.25 lb', damage: '1d4 piercing', properties: 'Finesse, Thrown (20/60)', village: true, town: true, city: true },
+            { name: 'Shortbow', subcategory: 'Simple Ranged', cost: '25 gp', weight: '2 lb', damage: '1d6 piercing', properties: 'Ammunition (80/320), Two-Handed', town: true, city: true },
+            { name: 'Sling', subcategory: 'Simple Ranged', cost: '0.1 gp', weight: '—', damage: '1d4 bludgeoning', properties: 'Ammunition (30/120)', village: true, town: true, city: true },
+            { name: 'Battleaxe', subcategory: 'Martial Melee', cost: '10 gp', weight: '4 lb', damage: '1d8 slashing', properties: 'Versatile (1d10)', town: true, city: true },
+            { name: 'Flail', subcategory: 'Martial Melee', cost: '10 gp', weight: '2 lb', damage: '1d8 bludgeoning', properties: '—', town: true, city: true },
+            { name: 'Glaive', subcategory: 'Martial Melee', cost: '20 gp', weight: '6 lb', damage: '1d10 slashing', properties: 'Heavy, Reach, Two-Handed', city: true },
+            { name: 'Greataxe', subcategory: 'Martial Melee', cost: '30 gp', weight: '7 lb', damage: '1d12 slashing', properties: 'Heavy, Two-Handed', city: true },
+            { name: 'Greatsword', subcategory: 'Martial Melee', cost: '50 gp', weight: '6 lb', damage: '2d6 slashing', properties: 'Heavy, Two-Handed', city: true },
+            { name: 'Halberd', subcategory: 'Martial Melee', cost: '20 gp', weight: '6 lb', damage: '1d10 slashing', properties: 'Heavy, Reach, Two-Handed', city: true },
+            { name: 'Lance', subcategory: 'Martial Melee', cost: '10 gp', weight: '6 lb', damage: '1d12 piercing', properties: 'Reach, Special', city: true },
+            { name: 'Longsword', subcategory: 'Martial Melee', cost: '15 gp', weight: '3 lb', damage: '1d8 slashing', properties: 'Versatile (1d10)', town: true, city: true },
+            { name: 'Maul', subcategory: 'Martial Melee', cost: '10 gp', weight: '10 lb', damage: '2d6 bludgeoning', properties: 'Heavy, Two-Handed', town: true, city: true },
+            { name: 'Morningstar', subcategory: 'Martial Melee', cost: '15 gp', weight: '4 lb', damage: '1d8 piercing', properties: '—', town: true, city: true },
+            { name: 'Pike', subcategory: 'Martial Melee', cost: '5 gp', weight: '18 lb', damage: '1d10 piercing', properties: 'Heavy, Reach, Two-Handed', town: true, city: true },
+            { name: 'Rapier', subcategory: 'Martial Melee', cost: '25 gp', weight: '2 lb', damage: '1d8 piercing', properties: 'Finesse', city: true },
+            { name: 'Scimitar', subcategory: 'Martial Melee', cost: '25 gp', weight: '3 lb', damage: '1d6 slashing', properties: 'Finesse, Light', city: true },
+            { name: 'Shortsword', subcategory: 'Martial Melee', cost: '10 gp', weight: '2 lb', damage: '1d6 piercing', properties: 'Finesse, Light', town: true, city: true },
+            { name: 'Trident', subcategory: 'Martial Melee', cost: '5 gp', weight: '4 lb', damage: '1d6 piercing', properties: 'Thrown (20/60), Versatile (1d8)', town: true, city: true },
+            { name: 'War Pick', subcategory: 'Martial Melee', cost: '5 gp', weight: '2 lb', damage: '1d8 piercing', properties: '—', town: true, city: true },
+            { name: 'Warhammer', subcategory: 'Martial Melee', cost: '15 gp', weight: '2 lb', damage: '1d8 bludgeoning', properties: 'Versatile (1d10)', town: true, city: true },
+            { name: 'Whip', subcategory: 'Martial Melee', cost: '2 gp', weight: '3 lb', damage: '1d4 slashing', properties: 'Finesse, Reach', city: true },
+            { name: 'Blowgun', subcategory: 'Martial Ranged', cost: '10 gp', weight: '1 lb', damage: '1 piercing', properties: 'Ammunition (25/100), Loading', city: true },
+            { name: 'Hand Crossbow', subcategory: 'Martial Ranged', cost: '75 gp', weight: '3 lb', damage: '1d6 piercing', properties: 'Ammunition (30/120), Light, Loading', city: true },
+            { name: 'Heavy Crossbow', subcategory: 'Martial Ranged', cost: '50 gp', weight: '18 lb', damage: '1d10 piercing', properties: 'Ammunition (100/400), Heavy, Loading, Two-Handed', city: true },
+            { name: 'Longbow', subcategory: 'Martial Ranged', cost: '50 gp', weight: '2 lb', damage: '1d8 piercing', properties: 'Ammunition (150/600), Heavy, Two-Handed', city: true },
+            { name: 'Net', subcategory: 'Martial Ranged', cost: '1 gp', weight: '3 lb', damage: '—', properties: 'Special, Thrown (5/15)', town: true, city: true }
+        ]
+    },
+    armor: {
+        name: 'Armor',
+        items: [
+            { name: 'Padded', subcategory: 'Light Armor', cost: '5 gp', weight: '8 lb', ac: '11 + Dex modifier', properties: 'Disadvantage on Stealth', village: true, town: true, city: true },
+            { name: 'Leather', subcategory: 'Light Armor', cost: '10 gp', weight: '10 lb', ac: '11 + Dex modifier', properties: '—', village: true, town: true, city: true },
+            { name: 'Studded Leather', subcategory: 'Light Armor', cost: '45 gp', weight: '13 lb', ac: '12 + Dex modifier', properties: '—', town: true, city: true },
+            { name: 'Hide', subcategory: 'Medium Armor', cost: '10 gp', weight: '12 lb', ac: '12 + Dex modifier (max 2)', properties: '—', village: true, town: true, city: true },
+            { name: 'Chain Shirt', subcategory: 'Medium Armor', cost: '50 gp', weight: '20 lb', ac: '13 + Dex modifier (max 2)', properties: '—', town: true, city: true },
+            { name: 'Scale Mail', subcategory: 'Medium Armor', cost: '50 gp', weight: '45 lb', ac: '14 + Dex modifier (max 2)', properties: 'Disadvantage on Stealth', town: true, city: true },
+            { name: 'Breastplate', subcategory: 'Medium Armor', cost: '400 gp', weight: '20 lb', ac: '14 + Dex modifier (max 2)', properties: '—', city: true },
+            { name: 'Half Plate', subcategory: 'Medium Armor', cost: '750 gp', weight: '40 lb', ac: '15 + Dex modifier (max 2)', properties: 'Disadvantage on Stealth', city: true },
+            { name: 'Ring Mail', subcategory: 'Heavy Armor', cost: '30 gp', weight: '40 lb', ac: '14', properties: 'Disadvantage on Stealth', town: true, city: true },
+            { name: 'Chain Mail', subcategory: 'Heavy Armor', cost: '75 gp', weight: '55 lb', ac: '16', properties: 'Str 13, Disadvantage on Stealth', city: true },
+            { name: 'Splint', subcategory: 'Heavy Armor', cost: '200 gp', weight: '60 lb', ac: '17', properties: 'Str 15, Disadvantage on Stealth', city: true },
+            { name: 'Plate', subcategory: 'Heavy Armor', cost: '1,500 gp', weight: '65 lb', ac: '18', properties: 'Str 15, Disadvantage on Stealth', city: true },
+            { name: 'Shield', subcategory: 'Shield', cost: '10 gp', weight: '6 lb', ac: '+2', properties: '—', village: true, town: true, city: true }
+        ]
+    },
+    gear: {
+        name: 'Adventuring Gear',
+        items: [
+            { name: 'Backpack', subcategory: 'Equipment Packs', cost: '2 gp', weight: '5 lb', description: 'Holds 1 cubic foot/30 pounds', village: true, town: true, city: true },
+            { name: 'Bedroll', subcategory: 'Equipment', cost: '1 gp', weight: '7 lb', description: 'For camping', village: true, town: true, city: true },
+            { name: 'Bell', subcategory: 'Equipment', cost: '1 gp', weight: '—', description: 'Makes noise', town: true, city: true },
+            { name: 'Blanket', subcategory: 'Equipment', cost: '0.5 gp', weight: '3 lb', description: 'For warmth', village: true, town: true, city: true },
+            { name: 'Block and Tackle', subcategory: 'Equipment', cost: '1 gp', weight: '5 lb', description: 'Pulley system', town: true, city: true },
+            { name: 'Book', subcategory: 'Equipment', cost: '25 gp', weight: '5 lb', description: 'A book with blank pages', city: true },
+            { name: 'Bottle, glass', subcategory: 'Equipment', cost: '2 gp', weight: '2 lb', description: 'Holds 1.5 pints', village: true, town: true, city: true },
+            { name: 'Bucket', subcategory: 'Equipment', cost: '0.05 gp', weight: '2 lb', description: 'Holds 3 gallons', village: true, town: true, city: true },
+            { name: 'Caltrops (bag of 20)', subcategory: 'Equipment', cost: '1 gp', weight: '2 lb', description: 'Area denial', town: true, city: true },
+            { name: 'Candle', subcategory: 'Equipment', cost: '0.01 gp', weight: '—', description: 'Light source, 1 hour', village: true, town: true, city: true },
+            { name: 'Chain (10 feet)', subcategory: 'Equipment', cost: '5 gp', weight: '10 lb', description: 'Can be burst with DC 20 Str check', town: true, city: true },
+            { name: 'Chest', subcategory: 'Equipment', cost: '5 gp', weight: '25 lb', description: 'Holds 12 cubic feet/300 pounds', village: true, town: true, city: true },
+            { name: 'Climber\'s Kit', subcategory: 'Equipment', cost: '25 gp', weight: '12 lb', description: 'Pitons, boot tips, gloves, harness', town: true, city: true },
+            { name: 'Clothes, Common', subcategory: 'Equipment', cost: '0.5 gp', weight: '3 lb', description: 'Basic clothing', village: true, town: true, city: true },
+            { name: 'Clothes, Costume', subcategory: 'Equipment', cost: '5 gp', weight: '4 lb', description: 'For disguises', town: true, city: true },
+            { name: 'Clothes, Fine', subcategory: 'Equipment', cost: '15 gp', weight: '6 lb', description: 'Fancy clothing', city: true },
+            { name: 'Clothes, Traveler\'s', subcategory: 'Equipment', cost: '2 gp', weight: '4 lb', description: 'Boots, coat, etc.', village: true, town: true, city: true },
+            { name: 'Crowbar', subcategory: 'Equipment', cost: '2 gp', weight: '5 lb', description: 'Advantage on Str checks', village: true, town: true, city: true },
+            { name: 'Flask or Tankard', subcategory: 'Equipment', cost: '0.02 gp', weight: '1 lb', description: 'Holds 1 pint', village: true, town: true, city: true },
+            { name: 'Grappling Hook', subcategory: 'Equipment', cost: '2 gp', weight: '4 lb', description: 'For climbing', town: true, city: true },
+            { name: 'Hammer', subcategory: 'Equipment', cost: '1 gp', weight: '3 lb', description: 'For hitting things', village: true, town: true, city: true },
+            { name: 'Healer\'s Kit', subcategory: 'Equipment', cost: '5 gp', weight: '3 lb', description: '10 uses, stabilize dying', town: true, city: true },
+            { name: 'Holy Symbol', subcategory: 'Equipment', cost: '5 gp', weight: '1 lb', description: 'Spellcasting focus', town: true, city: true },
+            { name: 'Hourglass', subcategory: 'Equipment', cost: '25 gp', weight: '1 lb', description: 'Measures time', city: true },
+            { name: 'Ink (1 ounce bottle)', subcategory: 'Equipment', cost: '10 gp', weight: '—', description: 'For writing', town: true, city: true },
+            { name: 'Ink Pen', subcategory: 'Equipment', cost: '0.02 gp', weight: '—', description: 'For writing', town: true, city: true },
+            { name: 'Ladder (10-foot)', subcategory: 'Equipment', cost: '0.1 gp', weight: '25 lb', description: 'For climbing', village: true, town: true, city: true },
+            { name: 'Lamp', subcategory: 'Equipment', cost: '0.5 gp', weight: '1 lb', description: 'Light source, 6 hours/pint', village: true, town: true, city: true },
+            { name: 'Lantern, Bullseye', subcategory: 'Equipment', cost: '10 gp', weight: '2 lb', description: '60 ft cone, 6 hours/pint', town: true, city: true },
+            { name: 'Lantern, Hooded', subcategory: 'Equipment', cost: '5 gp', weight: '2 lb', description: '30 ft radius, 6 hours/pint', town: true, city: true },
+            { name: 'Lock', subcategory: 'Equipment', cost: '10 gp', weight: '1 lb', description: 'DC 15 to pick', town: true, city: true },
+            { name: 'Manacles', subcategory: 'Equipment', cost: '2 gp', weight: '6 lb', description: 'DC 20 Str or Dex to escape', town: true, city: true },
+            { name: 'Mirror, steel', subcategory: 'Equipment', cost: '5 gp', weight: '0.5 lb', description: 'For looking', town: true, city: true },
+            { name: 'Oil (flask)', subcategory: 'Equipment', cost: '0.1 gp', weight: '1 lb', description: 'Fuel or weapon', village: true, town: true, city: true },
+            { name: 'Paper (one sheet)', subcategory: 'Equipment', cost: '0.2 gp', weight: '—', description: 'For writing', town: true, city: true },
+            { name: 'Parchment (one sheet)', subcategory: 'Equipment', cost: '0.1 gp', weight: '—', description: 'For writing', town: true, city: true },
+            { name: 'Perfume (vial)', subcategory: 'Equipment', cost: '5 gp', weight: '—', description: 'Smells nice', city: true },
+            { name: 'Piton', subcategory: 'Equipment', cost: '0.05 gp', weight: '0.25 lb', description: 'For climbing', town: true, city: true },
+            { name: 'Poison, Basic (vial)', subcategory: 'Equipment', cost: '100 gp', weight: '—', description: '1d4 poison damage', city: true },
+            { name: 'Pouch', subcategory: 'Equipment', cost: '0.5 gp', weight: '1 lb', description: 'Holds 1/5 cubic foot/6 pounds', village: true, town: true, city: true },
+            { name: 'Quiver', subcategory: 'Equipment', cost: '1 gp', weight: '1 lb', description: 'Holds 20 arrows', village: true, town: true, city: true },
+            { name: 'Ram, Portable', subcategory: 'Equipment', cost: '4 gp', weight: '35 lb', description: '+4 bonus to break doors', town: true, city: true },
+            { name: 'Rations (1 day)', subcategory: 'Equipment', cost: '0.5 gp', weight: '2 lb', description: 'Dried food', village: true, town: true, city: true },
+            { name: 'Rope, hempen (50 feet)', subcategory: 'Equipment', cost: '1 gp', weight: '10 lb', description: '2 hit points, AC 11', village: true, town: true, city: true },
+            { name: 'Rope, silk (50 feet)', subcategory: 'Equipment', cost: '10 gp', weight: '5 lb', description: '2 hit points, AC 11', city: true },
+            { name: 'Sack', subcategory: 'Equipment', cost: '0.01 gp', weight: '0.5 lb', description: 'Holds 1 cubic foot/30 pounds', village: true, town: true, city: true },
+            { name: 'Scale, Merchant\'s', subcategory: 'Equipment', cost: '5 gp', weight: '3 lb', description: 'Weighs things', town: true, city: true },
+            { name: 'Sealing Wax', subcategory: 'Equipment', cost: '0.5 gp', weight: '—', description: 'For sealing letters', town: true, city: true },
+            { name: 'Shovel', subcategory: 'Equipment', cost: '2 gp', weight: '5 lb', description: 'For digging', village: true, town: true, city: true },
+            { name: 'Signal Whistle', subcategory: 'Equipment', cost: '0.05 gp', weight: '—', description: 'Makes noise', village: true, town: true, city: true },
+            { name: 'Signet Ring', subcategory: 'Equipment', cost: '5 gp', weight: '—', description: 'For sealing', city: true },
+            { name: 'Soap', subcategory: 'Equipment', cost: '0.02 gp', weight: '—', description: 'For cleaning', village: true, town: true, city: true },
+            { name: 'Spellbook', subcategory: 'Equipment', cost: '50 gp', weight: '3 lb', description: 'For wizards', city: true },
+            { name: 'Spikes, iron (10)', subcategory: 'Equipment', cost: '1 gp', weight: '5 lb', description: 'For securing', village: true, town: true, city: true },
+            { name: 'Spyglass', subcategory: 'Equipment', cost: '1,000 gp', weight: '1 lb', description: 'See far away', city: true },
+            { name: 'Tent, two-person', subcategory: 'Equipment', cost: '2 gp', weight: '20 lb', description: 'For camping', village: true, town: true, city: true },
+            { name: 'Tinderbox', subcategory: 'Equipment', cost: '0.5 gp', weight: '1 lb', description: 'Start fires', village: true, town: true, city: true },
+            { name: 'Torch', subcategory: 'Equipment', cost: '0.01 gp', weight: '1 lb', description: 'Light source, 1 hour', village: true, town: true, city: true },
+            { name: 'Waterskin', subcategory: 'Equipment', cost: '0.2 gp', weight: '5 lb (full)', description: 'Holds 4 pints liquid', village: true, town: true, city: true },
+            { name: 'Whetstone', subcategory: 'Equipment', cost: '0.01 gp', weight: '1 lb', description: 'Sharpen weapons', village: true, town: true, city: true }
+        ]
+    },
+    tools: {
+        name: 'Tools',
+        items: [
+            { name: 'Alchemist\'s Supplies', subcategory: 'Artisan\'s Tools', cost: '50 gp', weight: '8 lb', description: 'Create alchemical items', city: true },
+            { name: 'Brewer\'s Supplies', subcategory: 'Artisan\'s Tools', cost: '20 gp', weight: '9 lb', description: 'Brew beer and ale', town: true, city: true },
+            { name: 'Calligrapher\'s Supplies', subcategory: 'Artisan\'s Tools', cost: '10 gp', weight: '5 lb', description: 'Write decoratively', city: true },
+            { name: 'Carpenter\'s Tools', subcategory: 'Artisan\'s Tools', cost: '8 gp', weight: '6 lb', description: 'Build wooden items', village: true, town: true, city: true },
+            { name: 'Cartographer\'s Tools', subcategory: 'Artisan\'s Tools', cost: '15 gp', weight: '6 lb', description: 'Create maps', city: true },
+            { name: 'Cobbler\'s Tools', subcategory: 'Artisan\'s Tools', cost: '5 gp', weight: '5 lb', description: 'Repair shoes', village: true, town: true, city: true },
+            { name: 'Cook\'s Utensils', subcategory: 'Artisan\'s Tools', cost: '1 gp', weight: '8 lb', description: 'Prepare meals', village: true, town: true, city: true },
+            { name: 'Glassblower\'s Tools', subcategory: 'Artisan\'s Tools', cost: '30 gp', weight: '5 lb', description: 'Work glass', city: true },
+            { name: 'Jeweler\'s Tools', subcategory: 'Artisan\'s Tools', cost: '25 gp', weight: '2 lb', description: 'Work jewelry', city: true },
+            { name: 'Leatherworker\'s Tools', subcategory: 'Artisan\'s Tools', cost: '5 gp', weight: '5 lb', description: 'Work leather', town: true, city: true },
+            { name: 'Mason\'s Tools', subcategory: 'Artisan\'s Tools', cost: '10 gp', weight: '8 lb', description: 'Work stone', town: true, city: true },
+            { name: 'Painter\'s Supplies', subcategory: 'Artisan\'s Tools', cost: '10 gp', weight: '5 lb', description: 'Create paintings', city: true },
+            { name: 'Potter\'s Tools', subcategory: 'Artisan\'s Tools', cost: '10 gp', weight: '3 lb', description: 'Create pottery', village: true, town: true, city: true },
+            { name: 'Smith\'s Tools', subcategory: 'Artisan\'s Tools', cost: '20 gp', weight: '8 lb', description: 'Work metal', town: true, city: true },
+            { name: 'Tinker\'s Tools', subcategory: 'Artisan\'s Tools', cost: '50 gp', weight: '10 lb', description: 'Repair items', town: true, city: true },
+            { name: 'Weaver\'s Tools', subcategory: 'Artisan\'s Tools', cost: '1 gp', weight: '5 lb', description: 'Work textiles', village: true, town: true, city: true },
+            { name: 'Woodcarver\'s Tools', subcategory: 'Artisan\'s Tools', cost: '1 gp', weight: '5 lb', description: 'Carve wood', village: true, town: true, city: true },
+            { name: 'Dice Set', subcategory: 'Gaming Set', cost: '0.1 gp', weight: '—', description: 'For gambling', village: true, town: true, city: true },
+            { name: 'Playing Card Set', subcategory: 'Gaming Set', cost: '0.5 gp', weight: '—', description: 'For gambling', village: true, town: true, city: true },
+            { name: 'Disguise Kit', subcategory: 'Other Tools', cost: '25 gp', weight: '3 lb', description: 'Create disguises', city: true },
+            { name: 'Forgery Kit', subcategory: 'Other Tools', cost: '15 gp', weight: '5 lb', description: 'Forge documents', city: true },
+            { name: 'Herbalism Kit', subcategory: 'Other Tools', cost: '5 gp', weight: '3 lb', description: 'Identify and use herbs', village: true, town: true, city: true },
+            { name: 'Navigator\'s Tools', subcategory: 'Other Tools', cost: '25 gp', weight: '2 lb', description: 'Chart courses', city: true },
+            { name: 'Poisoner\'s Kit', subcategory: 'Other Tools', cost: '50 gp', weight: '2 lb', description: 'Create poison', city: true },
+            { name: 'Thieves\' Tools', subcategory: 'Other Tools', cost: '25 gp', weight: '1 lb', description: 'Pick locks', city: true }
+        ]
+    },
+    food: {
+        name: 'Food, Drink & Lodging',
+        items: [
+            { name: 'Ale (mug)', subcategory: 'Drink', cost: '0.04 gp', weight: '—', description: 'Per mug', village: true, town: true, city: true },
+            { name: 'Wine, Common (pitcher)', subcategory: 'Drink', cost: '0.2 gp', weight: '—', description: 'Per pitcher', village: true, town: true, city: true },
+            { name: 'Wine, Fine (bottle)', subcategory: 'Drink', cost: '10 gp', weight: '—', description: 'Per bottle', city: true },
+            { name: 'Bread (loaf)', subcategory: 'Food', cost: '0.02 gp', weight: '0.5 lb', description: 'Fresh bread', village: true, town: true, city: true },
+            { name: 'Cheese (hunk)', subcategory: 'Food', cost: '0.1 gp', weight: '0.5 lb', description: 'Cheese wedge', village: true, town: true, city: true },
+            { name: 'Meat (chunk)', subcategory: 'Food', cost: '0.3 gp', weight: '0.5 lb', description: 'Cooked meat', village: true, town: true, city: true },
+            { name: 'Inn Stay (per day), Squalid', subcategory: 'Lodging', cost: '0.07 gp', weight: '—', description: 'Poor conditions', village: true, town: true, city: true },
+            { name: 'Inn Stay (per day), Poor', subcategory: 'Lodging', cost: '0.14 gp', weight: '—', description: 'Below average', village: true, town: true, city: true },
+            { name: 'Inn Stay (per day), Modest', subcategory: 'Lodging', cost: '0.5 gp', weight: '—', description: 'Average quality', village: true, town: true, city: true },
+            { name: 'Inn Stay (per day), Comfortable', subcategory: 'Lodging', cost: '0.8 gp', weight: '—', description: 'Good quality', town: true, city: true },
+            { name: 'Inn Stay (per day), Wealthy', subcategory: 'Lodging', cost: '2 gp', weight: '—', description: 'High quality', city: true },
+            { name: 'Inn Stay (per day), Aristocratic', subcategory: 'Lodging', cost: '4 gp', weight: '—', description: 'Luxury', city: true },
+            { name: 'Meal, Squalid', subcategory: 'Meals', cost: '0.03 gp', weight: '—', description: 'Poor quality food', village: true, town: true, city: true },
+            { name: 'Meal, Poor', subcategory: 'Meals', cost: '0.06 gp', weight: '—', description: 'Below average food', village: true, town: true, city: true },
+            { name: 'Meal, Modest', subcategory: 'Meals', cost: '0.3 gp', weight: '—', description: 'Average quality food', village: true, town: true, city: true },
+            { name: 'Meal, Comfortable', subcategory: 'Meals', cost: '0.5 gp', weight: '—', description: 'Good food', town: true, city: true },
+            { name: 'Meal, Wealthy', subcategory: 'Meals', cost: '1 gp', weight: '—', description: 'Fine dining', city: true },
+            { name: 'Meal, Aristocratic', subcategory: 'Meals', cost: '2 gp', weight: '—', description: 'Gourmet meal', city: true }
+        ]
+    },
+    services: {
+        name: 'Services',
+        items: [
+            { name: 'Coach cab (between towns)', subcategory: 'Transportation', cost: '0.03 gp per mile', weight: '—', description: 'Passenger transport', town: true, city: true },
+            { name: 'Coach cab (within city)', subcategory: 'Transportation', cost: '0.01 gp', weight: '—', description: 'City transport', city: true },
+            { name: 'Messenger', subcategory: 'Services', cost: '0.02 gp per mile', weight: '—', description: 'Delivers messages', village: true, town: true, city: true },
+            { name: 'Road/gate toll', subcategory: 'Services', cost: '0.01 gp', weight: '—', description: 'Access fee', town: true, city: true },
+            { name: 'Ship passage', subcategory: 'Transportation', cost: '0.1 gp per mile', weight: '—', description: 'Sea travel', city: true },
+            { name: 'Skilled hireling (per day)', subcategory: 'Hireling', cost: '2 gp', weight: '—', description: 'Artisan, scribe, etc.', town: true, city: true },
+            { name: 'Unskilled hireling (per day)', subcategory: 'Hireling', cost: '0.2 gp', weight: '—', description: 'Laborer', village: true, town: true, city: true }
+        ]
+    },
+    transport: {
+        name: 'Transportation & Mounts',
+        items: [
+            { name: 'Camel', subcategory: 'Mounts', cost: '50 gp', weight: '—', description: 'Speed 50 ft, Carry 480 lb', town: true, city: true },
+            { name: 'Donkey or mule', subcategory: 'Mounts', cost: '8 gp', weight: '—', description: 'Speed 40 ft, Carry 420 lb', village: true, town: true, city: true },
+            { name: 'Elephant', subcategory: 'Mounts', cost: '200 gp', weight: '—', description: 'Speed 40 ft, Carry 1,320 lb', city: true },
+            { name: 'Horse, draft', subcategory: 'Mounts', cost: '50 gp', weight: '—', description: 'Speed 40 ft, Carry 540 lb', town: true, city: true },
+            { name: 'Horse, riding', subcategory: 'Mounts', cost: '75 gp', weight: '—', description: 'Speed 60 ft, Carry 480 lb', town: true, city: true },
+            { name: 'Mastiff', subcategory: 'Mounts', cost: '25 gp', weight: '—', description: 'Guard dog', town: true, city: true },
+            { name: 'Pony', subcategory: 'Mounts', cost: '30 gp', weight: '—', description: 'Speed 40 ft, Carry 225 lb', village: true, town: true, city: true },
+            { name: 'Warhorse', subcategory: 'Mounts', cost: '400 gp', weight: '—', description: 'Speed 60 ft, Carry 540 lb', city: true },
+            { name: 'Barding (armor for mount)', subcategory: 'Tack and Harness', cost: '×4 armor cost', weight: '×2 armor weight', description: 'Armor for animals', city: true },
+            { name: 'Bit and bridle', subcategory: 'Tack and Harness', cost: '2 gp', weight: '1 lb', description: 'Control mount', village: true, town: true, city: true },
+            { name: 'Carriage', subcategory: 'Vehicles', cost: '100 gp', weight: '600 lb', description: 'Drawn vehicle', city: true },
+            { name: 'Cart', subcategory: 'Vehicles', cost: '15 gp', weight: '200 lb', description: 'Simple vehicle', village: true, town: true, city: true },
+            { name: 'Chariot', subcategory: 'Vehicles', cost: '250 gp', weight: '100 lb', description: 'Combat vehicle', city: true },
+            { name: 'Feed (per day)', subcategory: 'Tack and Harness', cost: '0.05 gp', weight: '10 lb', description: 'Animal food', village: true, town: true, city: true },
+            { name: 'Saddle, Exotic', subcategory: 'Tack and Harness', cost: '60 gp', weight: '40 lb', description: 'For unusual mounts', city: true },
+            { name: 'Saddle, Military', subcategory: 'Tack and Harness', cost: '20 gp', weight: '30 lb', description: 'Combat saddle', town: true, city: true },
+            { name: 'Saddle, Pack', subcategory: 'Tack and Harness', cost: '5 gp', weight: '15 lb', description: 'Cargo saddle', village: true, town: true, city: true },
+            { name: 'Saddle, Riding', subcategory: 'Tack and Harness', cost: '10 gp', weight: '25 lb', description: 'Standard saddle', village: true, town: true, city: true },
+            { name: 'Saddlebags', subcategory: 'Tack and Harness', cost: '4 gp', weight: '8 lb', description: 'Storage for mount', village: true, town: true, city: true },
+            { name: 'Sled', subcategory: 'Vehicles', cost: '20 gp', weight: '300 lb', description: 'Snow vehicle', village: true, town: true, city: true },
+            { name: 'Stabling (per day)', subcategory: 'Tack and Harness', cost: '0.5 gp', weight: '—', description: 'Housing for mount', village: true, town: true, city: true },
+            { name: 'Wagon', subcategory: 'Vehicles', cost: '35 gp', weight: '400 lb', description: 'Large vehicle', village: true, town: true, city: true },
+            { name: 'Galley', subcategory: 'Waterborne Vehicles', cost: '30,000 gp', weight: '—', description: 'Large ship (4 mph)', city: true },
+            { name: 'Keelboat', subcategory: 'Waterborne Vehicles', cost: '3,000 gp', weight: '—', description: 'River boat (1 mph)', city: true },
+            { name: 'Longship', subcategory: 'Waterborne Vehicles', cost: '10,000 gp', weight: '—', description: 'Sailing ship (3 mph)', city: true },
+            { name: 'Rowboat', subcategory: 'Waterborne Vehicles', cost: '50 gp', weight: '100 lb', description: 'Small boat (1.5 mph)', town: true, city: true },
+            { name: 'Sailing ship', subcategory: 'Waterborne Vehicles', cost: '10,000 gp', weight: '—', description: 'Ocean vessel (2 mph)', city: true },
+            { name: 'Warship', subcategory: 'Waterborne Vehicles', cost: '25,000 gp', weight: '—', description: 'Military vessel (2.5 mph)', city: true }
+        ]
+    }
+};
+
+let currentShopCategory = 'weapons';
+let currentSettlementFilter = 'all';
+
+function switchShopCategory(category) {
+    currentShopCategory = category;
+
+    // Update active button
+    document.querySelectorAll('.shop-tab-button').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Render shop items
+    renderShopItems();
+}
+
+function filterShopItems() {
+    currentSettlementFilter = document.getElementById('settlementFilter').value;
+    renderShopItems();
+}
+
+function renderShopItems() {
+    const searchTerm = document.getElementById('shopSearch')?.value.toLowerCase() || '';
+    const category = shopData[currentShopCategory];
+    const content = document.getElementById('shopContent');
+
+    if (!category || !content) return;
+
+    let items = category.items;
+
+    // Filter by search
+    if (searchTerm) {
+        items = items.filter(item =>
+            item.name.toLowerCase().includes(searchTerm) ||
+            item.subcategory.toLowerCase().includes(searchTerm) ||
+            (item.description && item.description.toLowerCase().includes(searchTerm))
+        );
+    }
+
+    // Filter by settlement
+    if (currentSettlementFilter !== 'all') {
+        items = items.filter(item => item[currentSettlementFilter]);
+    }
+
+    // Group by subcategory
+    const groupedItems = {};
+    items.forEach(item => {
+        if (!groupedItems[item.subcategory]) {
+            groupedItems[item.subcategory] = [];
+        }
+        groupedItems[item.subcategory].push(item);
+    });
+
+    // Render
+    let html = `<h3>${category.name}</h3>`;
+
+    Object.keys(groupedItems).forEach(subcategory => {
+        html += `
+            <div class="shop-subcategory">
+                <h4>${subcategory}</h4>
+                <div class="shop-items-grid">
+        `;
+
+        groupedItems[subcategory].forEach(item => {
+            const availability = [];
+            if (item.village) availability.push('Village');
+            if (item.town) availability.push('Town');
+            if (item.city) availability.push('City');
+
+            html += `
+                <div class="shop-item-card">
+                    <div class="shop-item-header">
+                        <strong>${item.name}</strong>
+                        <span class="shop-item-cost">${item.cost}</span>
+                    </div>
+                    ${item.weight ? `<div class="shop-item-detail">Weight: ${item.weight}</div>` : ''}
+                    ${item.damage ? `<div class="shop-item-detail">Damage: ${item.damage}</div>` : ''}
+                    ${item.ac ? `<div class="shop-item-detail">AC: ${item.ac}</div>` : ''}
+                    ${item.properties ? `<div class="shop-item-detail">Properties: ${item.properties}</div>` : ''}
+                    ${item.description ? `<div class="shop-item-description">${item.description}</div>` : ''}
+                    <div class="shop-item-availability">${availability.join(', ')}</div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    if (items.length === 0) {
+        html += '<p style="text-align: center; color: var(--text-dim); padding: 40px;">No items found</p>';
+    }
+
+    content.innerHTML = html;
+}
+
+// Reference section spell filtering and rendering
+function filterReferenceSpells() {
+    renderReferenceSpells();
+}
+
+function renderReferenceSpells() {
+    const searchTerm = document.getElementById('spellSearch')?.value.toLowerCase() || '';
+    const levelFilter = document.getElementById('spellLevelFilter')?.value || 'all';
+    const classFilter = document.getElementById('spellClassFilter')?.value || 'all';
+    const schoolFilter = document.getElementById('spellSchoolFilter')?.value || 'all';
+    const content = document.getElementById('spellContent');
+
+    if (!content || typeof spellsData === 'undefined') return;
+
+    let html = '';
+    const levelNames = {
+        'cantrip': 'Cantrips',
+        'level1': '1st Level Spells',
+        'level2': '2nd Level Spells',
+        'level3': '3rd Level Spells',
+        'level4': '4th Level Spells',
+        'level5': '5th Level Spells',
+        'level6': '6th Level Spells',
+        'level7': '7th Level Spells',
+        'level8': '8th Level Spells',
+        'level9': '9th Level Spells'
+    };
+
+    // Iterate through spell levels
+    Object.keys(spellsData).forEach(level => {
+        // Skip if level filter is active and doesn't match
+        if (levelFilter !== 'all' && levelFilter !== level) return;
+
+        let spells = spellsData[level];
+
+        // Filter by search term
+        if (searchTerm) {
+            spells = spells.filter(spell =>
+                spell.name.toLowerCase().includes(searchTerm) ||
+                spell.school.toLowerCase().includes(searchTerm) ||
+                spell.desc.toLowerCase().includes(searchTerm) ||
+                spell.classes.some(c => c.toLowerCase().includes(searchTerm))
+            );
+        }
+
+        // Filter by class
+        if (classFilter !== 'all') {
+            spells = spells.filter(spell => spell.classes.includes(classFilter));
+        }
+
+        // Filter by school
+        if (schoolFilter !== 'all') {
+            spells = spells.filter(spell => spell.school === schoolFilter);
+        }
+
+        // Only render if there are spells
+        if (spells.length > 0) {
+            html += `
+                <div class="spell-level-section">
+                    <h3>${levelNames[level] || level}</h3>
+                    <div class="spell-grid">
+            `;
+
+            spells.forEach(spell => {
+                html += `
+                    <div class="spell-card">
+                        <div class="spell-header">
+                            <strong>${spell.name}</strong>
+                            <span class="spell-school">${spell.school}</span>
+                        </div>
+                        <div class="spell-classes">${spell.classes.join(', ')}</div>
+                        <div class="spell-description">${spell.desc}</div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+    });
+
+    if (html === '') {
+        html = '<p style="text-align: center; color: var(--text-dim); padding: 40px;">No spells found</p>';
+    }
+
+    content.innerHTML = html;
 }
 
 // Difficulty slider update
@@ -1013,30 +2159,38 @@ const featsData = {
         { name: 'Musician', prereq: 'None', desc: 'You gain proficiency with three Musical Instruments of your choice. After a Short or Long Rest, you can give Inspiration to allies who heard your performance. Number of allies equals your Proficiency Bonus.' },
         { name: 'Savage Attacker', prereq: 'None', desc: 'Once per turn when you hit with a melee weapon attack, you can reroll the weapon\'s damage dice and use either result.' },
         { name: 'Skilled', prereq: 'None', desc: 'You gain proficiency in three skills of your choice, or in two skills and one set of tools of your choice.' },
-        { name: 'Tavern Brawler', prereq: 'None', desc: 'You gain proficiency with improvised weapons. Your Unarmed Strike uses a d4 for damage. When you hit with an Unarmed Strike as part of the Attack action on your turn, you can deal damage to the target and also grapple it (no action required).' }
+        { name: 'Tavern Brawler', prereq: 'None', desc: 'You gain proficiency with improvised weapons. Your Unarmed Strike uses a d4 for damage. When you hit with an Unarmed Strike as part of the Attack action on your turn, you can deal damage to the target and also grapple it (no action required).' },
+        { name: 'Tough', prereq: 'None', desc: 'Your Hit Point maximum increases by an amount equal to twice your character level when you gain this feat. Whenever you gain a character level thereafter, your Hit Point maximum increases by an additional 2 Hit Points.' }
     ],
     general: [
         { name: 'Ability Score Improvement', prereq: '4th level', desc: 'Increase one ability score of your choice by 2, or increase two ability scores by 1 each. You can\'t increase an ability score above 20 using this feat.' },
         { name: 'Actor', prereq: '4th level', desc: 'Increase your Charisma by 1. You have Advantage on Deception and Performance checks when trying to pass yourself off as someone else. You can mimic another person\'s speech or sounds made by creatures after hearing them for at least 1 minute.' },
         { name: 'Athlete', prereq: '4th level, Strength or Dexterity 13+', desc: 'Increase Strength or Dexterity by 1. Climbing doesn\'t cost extra movement. You need only 5 feet of running start for long jumps. You have Advantage on ability checks to escape a grapple.' },
         { name: 'Charger', prereq: '4th level', desc: 'When you take the Dash action, you can make one melee weapon attack or shove a creature as a Bonus Action. If you move at least 10 feet straight toward the target, you either gain +5 to the attack\'s damage or push the target 10 feet (your choice).' },
+        { name: 'Chef', prereq: '4th level', desc: 'Increase Constitution or Wisdom by 1. You gain proficiency with Cook\'s Utensils. During a Short Rest, you can cook food for 4 + Proficiency Bonus creatures; those who spend Hit Dice regain extra 1d8 HP. With 1 hour work or after a Long Rest, you can cook treats equal to your Proficiency Bonus that grant Temp HP equal to your Proficiency Bonus when eaten (treats last 8 hours).' },
         { name: 'Crossbow Expert', prereq: '4th level', desc: 'You ignore the Loading property of crossbows. Being within 5 feet of a hostile creature doesn\'t impose Disadvantage on your ranged attack rolls. When you use the Attack action to attack with a one-handed weapon, you can make a ranged attack with a hand crossbow as a Bonus Action.' },
+        { name: 'Crusher', prereq: '4th level', desc: 'Increase Strength or Constitution by 1. Once per turn when you hit with Bludgeoning damage, you can move the target 5 feet if it\'s no more than one size larger. When you score a Critical Hit with Bludgeoning damage, attack rolls against that creature have Advantage until the start of your next turn.' },
         { name: 'Defensive Duelist', prereq: '4th level, Dexterity 13+', desc: 'When wielding a Finesse weapon and another creature hits you with a melee attack, you can use your Reaction to add your Proficiency Bonus to your AC for that attack, potentially causing it to miss.' },
         { name: 'Dual Wielder', prereq: '4th level', desc: 'You gain +1 AC while wielding separate melee weapons in each hand. You can draw or stow two weapons when you would normally draw or stow one. You can engage in two-weapon fighting even when the weapons you are wielding aren\'t Light.' },
         { name: 'Durable', prereq: '4th level', desc: 'Increase Constitution by 1. When you roll a Hit Die to regain HP, the minimum number of HP you regain equals twice your Constitution modifier.' },
         { name: 'Elemental Adept', prereq: '4th level, Spellcasting or Pact Magic feature', desc: 'Choose acid, cold, fire, lightning, or thunder. Spells you cast ignore Resistance to that damage type. When you roll damage for a spell that deals that type, you can treat any 1 on a damage die as a 2.' },
         { name: 'Fey Touched', prereq: '4th level', desc: 'Increase Intelligence, Wisdom, or Charisma by 1. You learn Misty Step and one 1st-level spell from the Divination or Enchantment school. You can cast each spell once per Long Rest without a spell slot. Your spellcasting ability is the ability increased by this feat.' },
+        { name: 'Grappler', prereq: '4th level, Strength or Dexterity 13+', desc: 'Increase Strength or Dexterity by 1. When you hit with an Unarmed Strike as part of the Attack action, you can deal damage and also use the Grapple option (once per turn). You have Advantage on attack rolls against creatures you have Grappled. Moving a Grappled creature of your size or smaller doesn\'t cost extra movement.' },
         { name: 'Great Weapon Master', prereq: '4th level', desc: 'When you score a Critical Hit or reduce a creature to 0 HP with a melee weapon, you can make one melee weapon attack as a Bonus Action. Before you make a melee attack with a Heavy weapon, you can take a -5 penalty to the attack roll. If the attack hits, you add +10 to the attack\'s damage.' },
         { name: 'Heavily Armored', prereq: '4th level, Medium Armor proficiency', desc: 'Increase Strength by 1. You gain proficiency with Heavy Armor.' },
         { name: 'Heavy Armor Master', prereq: '4th level, Heavy Armor proficiency', desc: 'Increase Strength by 1. While wearing Heavy Armor, bludgeoning, piercing, and slashing damage you take from nonmagical weapons is reduced by 3.' },
         { name: 'Inspiring Leader', prereq: '4th level, Charisma 13+', desc: 'You can spend 10 minutes inspiring companions. Choose up to 6 creatures who can hear and understand you. Each gains temporary HP equal to your level + your Charisma modifier. A creature can\'t gain temp HP from this feat again until finishing a Short or Long Rest.' },
         { name: 'Keen Mind', prereq: '4th level', desc: 'Increase Intelligence by 1. You can accurately recall anything you\'ve seen or heard in the past month. You always know which way is north and hours until the next sunrise or sunset.' },
+        { name: 'Lightly Armored', prereq: '4th level', desc: 'Increase Strength or Dexterity by 1. You gain training with Light Armor and Shields.' },
         { name: 'Mage Slayer', prereq: '4th level', desc: 'When a creature within 5 feet casts a spell, you can use your Reaction to make a melee weapon attack against it. When you damage a concentrating creature, it has Disadvantage on the saving throw. You have Advantage on saves against spells cast by creatures within 5 feet.' },
-        { name: 'Martial Adept', prereq: '4th level', desc: 'You learn two maneuvers from the Battle Master. If a maneuver requires a save, DC = 8 + Proficiency Bonus + Strength or Dexterity modifier. You gain one d6 Superiority Die (regains on Short/Long Rest).' },
+        { name: 'Martial Weapon Training', prereq: '4th level', desc: 'Increase Strength or Dexterity by 1. You gain proficiency with Martial weapons.' },
         { name: 'Medium Armor Master', prereq: '4th level, Medium Armor proficiency', desc: 'Increase Strength or Dexterity by 1. While wearing Medium Armor, you can add up to 3 (instead of 2) to AC if you have 16+ Dexterity. Wearing Medium Armor doesn\'t impose Disadvantage on Stealth checks.' },
         { name: 'Mobile', prereq: '4th level', desc: 'Your Speed increases by 10 feet. When you use Dash, difficult terrain doesn\'t cost extra movement. When you make a melee attack against a creature, you don\'t provoke opportunity attacks from that creature until the end of your turn.' },
+        { name: 'Moderately Armored', prereq: '4th level, Light Armor training', desc: 'Increase Strength or Dexterity by 1. You gain training with Medium Armor.' },
         { name: 'Mounted Combatant', prereq: '4th level', desc: 'You have Advantage on melee attacks against unmounted creatures smaller than your mount. You can force an attack targeting your mount to target you instead. If your mount is subjected to an effect that allows a Dex save for half damage, it takes no damage on success (instead of half).' },
         { name: 'Observant', prereq: '4th level', desc: 'Increase Intelligence or Wisdom by 1. If you can see a creature\'s mouth while it speaks a language you understand, you can interpret what it\'s saying by reading its lips. You have +5 bonus to passive Perception and passive Investigation.' },
+        { name: 'Piercer', prereq: '4th level', desc: 'Increase Strength or Dexterity by 1. Once per turn when you hit with Piercing damage, you can reroll one damage die and use either result. When you score a Critical Hit with Piercing damage, roll one additional damage die.' },
+        { name: 'Poisoner', prereq: '4th level', desc: 'Increase Dexterity or Intelligence by 1. Your Poison damage ignores Poison Resistance. You gain proficiency with Poisoner\'s Kit. You can create poison doses equal to your Proficiency Bonus in 1 hour. As a Bonus Action, apply poison to weapon/ammo (lasts 1 minute or until damage dealt). Target makes Constitution save or takes 2d8 Poison damage and gains Poisoned condition until end of its next turn.' },
         { name: 'Polearm Master', prereq: '4th level', desc: 'When you take the Attack action with a glaive, halberd, pike, or quarterstaff, you can use a Bonus Action to make a melee attack with the opposite end (uses d4 for damage). While wielding a glaive, halberd, pike, or quarterstaff, creatures provoke opportunity attacks when they enter your reach.' },
         { name: 'Resilient', prereq: '4th level', desc: 'Increase one ability score by 1. You gain proficiency in saving throws using the chosen ability.' },
         { name: 'Ritual Caster', prereq: '4th level, Intelligence, Wisdom, or Charisma 13+', desc: 'Choose a class. You learn two 1st-level spells with the Ritual tag from that class. You can cast them as rituals. You can add other ritual spells you find to your ritual book.' },
@@ -1044,11 +2198,15 @@ const featsData = {
         { name: 'Shadow Touched', prereq: '4th level', desc: 'Increase Intelligence, Wisdom, or Charisma by 1. You learn Invisibility and one 1st-level spell from the Illusion or Necromancy school. You can cast each once per Long Rest without a spell slot. Your spellcasting ability is the ability increased by this feat.' },
         { name: 'Sharpshooter', prereq: '4th level', desc: 'Your ranged weapon attacks ignore half and three-quarters cover. Before you make a ranged weapon attack, you can take a -5 penalty to the attack roll. If it hits, you add +10 to the attack\'s damage.' },
         { name: 'Shield Master', prereq: '4th level', desc: 'If you take the Attack action, you can use a Bonus Action to shove a creature within 5 feet (must be holding a shield). If you\'re holding a shield and subjected to an effect that allows a Dex save for half damage, you can use your Reaction to take no damage on success (instead of half). If holding a shield, you gain the shield\'s AC bonus against effects that target only you and allow a Dex save.' },
+        { name: 'Skill Expert', prereq: '4th level', desc: 'Increase one ability score by 1. You gain proficiency in one skill of your choice. Choose one skill in which you have proficiency but lack Expertise. You gain Expertise with that skill.' },
         { name: 'Skulker', prereq: '4th level, Dexterity 13+', desc: 'You can Hide when lightly obscured. Missing with a ranged weapon attack doesn\'t reveal your position. Dim light doesn\'t impose Disadvantage on Perception checks.' },
+        { name: 'Slasher', prereq: '4th level', desc: 'Increase Strength or Dexterity by 1. Once per turn when you hit with Slashing damage, you can reduce the target\'s Speed by 10 feet until the start of your next turn. When you score a Critical Hit with Slashing damage, the target has Disadvantage on attack rolls until the start of your next turn.' },
+        { name: 'Speedy', prereq: '4th level, Dexterity or Constitution 13+', desc: 'Increase Dexterity or Constitution by 1. Your Speed increases by 10 feet. When you take the Dash action, difficult terrain doesn\'t cost extra movement. Opportunity Attacks against you have Disadvantage.' },
         { name: 'Spell Sniper', prereq: '4th level, Spellcasting or Pact Magic feature', desc: 'When you cast a spell that requires a ranged attack roll, the spell\'s range is doubled. Your ranged spell attacks ignore half and three-quarters cover. You learn one cantrip that requires an attack roll from any class\'s spell list.' },
         { name: 'Telekinetic', prereq: '4th level', desc: 'Increase Intelligence, Wisdom, or Charisma by 1. You learn Mage Hand (invisible when you cast it). As a Bonus Action, you can try to shove a creature within 30 feet using telekinesis (Strength save vs your spell save DC).' },
         { name: 'Telepathic', prereq: '4th level', desc: 'Increase Intelligence, Wisdom, or Charisma by 1. You can speak telepathically to any creature within 60 feet. You can cast Detect Thoughts once per Long Rest without a spell slot (spell save DC uses the ability increased by this feat).' },
-        { name: 'War Caster', prereq: '4th level, Spellcasting or Pact Magic feature', desc: 'You have Advantage on Constitution saves to maintain concentration. You can perform somatic components even when holding weapons or a shield. When a creature provokes an opportunity attack, you can use your Reaction to cast a spell targeting only that creature (spell must have 1 action casting time and target only that creature).' }
+        { name: 'War Caster', prereq: '4th level, Spellcasting or Pact Magic feature', desc: 'You have Advantage on Constitution saves to maintain concentration. You can perform somatic components even when holding weapons or a shield. When a creature provokes an opportunity attack, you can use your Reaction to cast a spell targeting only that creature (spell must have 1 action casting time and target only that creature).' },
+        { name: 'Weapon Master', prereq: '4th level', desc: 'Increase Strength or Dexterity by 1. You gain the Mastery property for one Simple or Martial weapon you\'re proficient with. You can change the weapon after each Long Rest.' }
     ]
 };
 
@@ -2284,21 +3442,21 @@ const classTraitsByLevel = {
     Monk: {
         1: [{ name: 'Martial Arts', notes: 'Use DEX instead of STR for unarmed strikes and monk weapons. Unarmed damage = 1d6. When you use Attack action with unarmed or monk weapon, make one unarmed strike as bonus action.' },
             { name: 'Unarmored Defense', notes: 'AC = 10 + DEX + WIS when not wearing armor or shield.' }],
-        2: [{ name: 'Ki', notes: 'You have ki points = monk level. Spend ki to use Flurry of Blows, Patient Defense, or Step of the Wind. Regain on short/long rest.' },
-            { name: 'Uncanny Metabolism', notes: 'At end of turn, if bloodied (half HP or less), regain ki points = proficiency bonus. Once per long rest.' },
+        2: [{ name: 'Focus Points', notes: 'You have Focus Points = monk level. Flurry of Blows: Spend 1 Focus Point for 2 unarmed strikes as bonus action. Patient Defense: Disengage as bonus action (free) or spend 1 Focus Point to Disengage + Dodge. Step of the Wind: Dash as bonus action (free) or spend 1 Focus Point to Disengage + Dash with doubled jump. Regain on short/long rest.' },
+            { name: 'Uncanny Metabolism', notes: 'Once per long rest when you roll initiative, you can regain all expended Focus Points and regain HP equal to your monk level + your Martial Arts die.' },
             { name: 'Unarmored Movement', notes: 'Speed increases while not wearing armor or wielding a shield: +10ft (level 2), +15ft (level 6), +20ft (level 10), +25ft (level 14), +30ft (level 18).' }],
-        3: [{ name: 'Deflect Attacks', notes: 'Use reaction to reduce damage from attack by 1d10 + DEX + monk level. If reduced to 0, spend 1 ki to redirect at attacker (melee) or another target (ranged).' }],
+        3: [{ name: 'Deflect Attacks', notes: 'Use reaction to reduce damage from attack by 1d10 + DEX + monk level. If reduced to 0, spend 1 Focus Point to redirect at attacker (melee) or another target (ranged).' }],
         4: [{ name: 'Slow Fall', notes: 'Use reaction when falling to reduce fall damage by 5× monk level.' }],
         5: [{ name: 'Extra Attack', notes: 'Attack twice when you take the Attack action.' },
-            { name: 'Stunning Strike', notes: 'Once per turn when you hit with a melee weapon or unarmed strike, spend 1 ki to force target to make CON save or be stunned until end of your next turn.' }],
+            { name: 'Stunning Strike', notes: 'Once per turn when you hit with a melee weapon or unarmed strike, spend 1 Focus Point to force target to make CON save or be stunned until end of your next turn.' }],
         6: [{ name: 'Empowered Strikes', notes: 'Your unarmed strikes count as magical.' }],
         7: [{ name: 'Evasion', notes: 'When you succeed on DEX save that deals half damage on success, take no damage instead. On fail, take half damage.' }],
-        10: [{ name: 'Self-Restoration', notes: 'As action, end one condition on yourself: charmed, frightened, or poisoned. Also, spend 4 ki to end one level of exhaustion.' }],
-        13: [{ name: 'Deflect Energy', notes: 'When you take acid, cold, fire, lightning, or thunder damage, use reaction to reduce damage by 1d10 + WIS + monk level. Spend 1 ki to reflect it.' }],
+        10: [{ name: 'Self-Restoration', notes: 'As action, end one condition on yourself: charmed, frightened, or poisoned. Also, spend 4 Focus Points to end one level of exhaustion.' }],
+        13: [{ name: 'Deflect Energy', notes: 'When you take acid, cold, fire, lightning, or thunder damage, use reaction to reduce damage by 1d10 + WIS + monk level. Spend 1 Focus Point to reflect it.' }],
         14: [{ name: 'Disciplined Survivor', notes: 'Death saves use WIS modifier instead of no modifier. When you start turn with 0 HP and succeed on death save, stand up with HP = monk level.' }],
-        15: [{ name: 'Perfect Focus', notes: 'When you roll initiative with no ki, regain 4 ki.' }],
-        18: [{ name: 'Superior Defense', notes: 'At start of turn, spend 3 ki to give yourself resistance to all damage except Force damage until start of next turn.' }],
-        20: [{ name: 'Body and Mind', notes: 'Martial Arts damage becomes 1d12. At end of turn if bloodied, regain ki = WIS modifier (min 1).' }]
+        15: [{ name: 'Perfect Focus', notes: 'When you roll initiative with fewer than 4 Focus Points, regain Focus Points until you have 4.' }],
+        18: [{ name: 'Superior Defense', notes: 'At start of turn, spend 3 Focus Points to give yourself resistance to all damage except Force damage until start of next turn.' }],
+        20: [{ name: 'Body and Mind', notes: 'Martial Arts damage becomes 1d12. At end of turn if bloodied, regain Focus Points = WIS modifier (min 1).' }]
     },
     Paladin: {
         1: [{ name: 'Lay on Hands', notes: 'Touch a creature to restore HP. Have pool of HP = 5× paladin level. Restore any amount from pool. Can also cure one disease or neutralize poison (costs 5 HP from pool). Regain on long rest.' },
@@ -2866,14 +4024,14 @@ function createCountersFromTraits() {
             });
         }
 
-        // Ki (Monk) - Ki points equal to monk level
-        if (name.includes('ki') && trait.type === 'class') {
-            const kiPoints = level;
+        // Focus Points (Monk) - Focus Points equal to monk level
+        if (name.includes('focus points') && trait.type === 'class') {
+            const focusPoints = level;
             char.counters.push({
-                id: `auto-ki-${Date.now()}`,
-                name: 'Ki Points',
-                max: kiPoints,
-                current: kiPoints,
+                id: `auto-focus-${Date.now()}`,
+                name: 'Focus Points',
+                max: focusPoints,
+                current: focusPoints,
                 autoGenerated: true
             });
         }
@@ -3503,11 +4661,6 @@ const spellSlotsByClassAndLevel = {
 
 // Auto-populate counters for HP, Temp HP, and spell slots
 function autoPopulateCounters() {
-    // Save any changes to the current character sheet first
-    if (currentCounterCharacterIndex === currentCharacterIndex) {
-        saveCurrentCharacter();
-    }
-
     // Get the character whose counters we're updating
     const char = characters[currentCounterCharacterIndex];
     if (!char) {
@@ -3515,10 +4668,28 @@ function autoPopulateCounters() {
         return;
     }
 
-    // Always get data from the counter character's saved data
-    const charClass = char.class || '';
-    const charLevel = parseInt(char.level) || 1;
-    const maxHP = parseInt(char.maxHp || char.hp) || 10;
+    // If we're auto-populating for the currently displayed character,
+    // read values directly from the DOM to get the latest edits
+    let charClass, charLevel, maxHP;
+
+    if (currentCounterCharacterIndex === currentCharacterIndex) {
+        // Save current character first to ensure data is synced
+        saveCurrentCharacter();
+
+        // Read from DOM for most up-to-date values
+        const classInput = document.getElementById('charClass');
+        const levelInput = document.getElementById('charLevel');
+        const hpMaxInput = document.getElementById('hpMax');
+
+        charClass = classInput ? classInput.value : (char.class || '');
+        charLevel = levelInput ? parseInt(levelInput.value) || 1 : (parseInt(char.level) || 1);
+        maxHP = hpMaxInput ? parseInt(hpMaxInput.value) || 10 : (parseInt(char.maxHp || char.hp) || 10);
+    } else {
+        // For other characters, use saved data
+        charClass = char.class || '';
+        charLevel = parseInt(char.level) || 1;
+        maxHP = parseInt(char.maxHp || char.hp) || 10;
+    }
 
     if (!charClass) {
         alert('Please select a class first');
@@ -3528,6 +4699,12 @@ function autoPopulateCounters() {
     // Initialize counters array
     if (!char.counters) {
         char.counters = [];
+    }
+
+    // Ensure counterIdCounter is properly initialized for this character
+    if (char.counters.length > 0) {
+        const maxId = Math.max(...char.counters.map(c => c.id || 0));
+        counterIdCounter = Math.max(counterIdCounter, maxId + 1);
     }
 
     // Update or create HP counter
@@ -3618,6 +4795,14 @@ function getCurrentCharacterCounters() {
 function switchCounterCharacter() {
     const select = document.getElementById('counterCharacterSelect');
     currentCounterCharacterIndex = parseInt(select.value);
+
+    // Initialize counterIdCounter based on this character's existing counters
+    const char = characters[currentCounterCharacterIndex];
+    if (char && char.counters && char.counters.length > 0) {
+        const maxId = Math.max(...char.counters.map(c => c.id || 0));
+        counterIdCounter = maxId + 1;
+    }
+
     renderCounters();
 }
 
@@ -3777,7 +4962,13 @@ function renderCounters() {
                 </div>
             </div>
             <div class="counter-display">
-                <input type="number" class="counter-value-input" value="${counter.current}" min="0" max="${counter.max}" onchange="setCounterValue(${counter.id}, this.value)" />
+                <input type="number"
+                    class="counter-value-input"
+                    value="${counter.current}"
+                    min="0"
+                    max="${counter.max}"
+                    oninput="updateCounterInput(${counter.id}, this.value)"
+                    onblur="setCounterValue(${counter.id}, this.value)" />
                 <div class="counter-max">/ ${counter.max}</div>
             </div>
             <div class="counter-controls">
@@ -3796,8 +4987,19 @@ function setCounterValue(id, value) {
         const newValue = parseInt(value);
         if (!isNaN(newValue) && newValue >= 0) {
             counter.current = Math.min(newValue, counter.max);
-            renderCounters();
+            // Don't re-render on direct input - just save
             saveUserData();
+        }
+    }
+}
+
+function updateCounterInput(id, value) {
+    const counters = getCurrentCharacterCounters();
+    const counter = counters.find(c => c.id === id);
+    if (counter) {
+        const newValue = parseInt(value);
+        if (!isNaN(newValue) && newValue >= 0) {
+            counter.current = Math.min(newValue, counter.max);
         }
     }
 }
@@ -3810,7 +5012,7 @@ async function checkLogin() {
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
         currentUser = savedUser;
-        if (savedUser === 'admin') {
+        if (savedUser.toLowerCase() === 'admin') {
             showAdminPage();
         } else {
             showMainApp();
@@ -3935,10 +5137,10 @@ async function attemptLogin() {
         return;
     }
 
-    // Check for admin login
-    if (name === 'admin' && password === 'admin') {
-        currentUser = 'admin';
-        localStorage.setItem('currentUser', 'admin');
+    // Check for admin login (case-insensitive)
+    if (name.toLowerCase() === 'admin') {
+        currentUser = 'Admin';
+        localStorage.setItem('currentUser', 'Admin');
         closeLoginModal();
         showAdminPage();
         return;
@@ -4498,6 +5700,12 @@ function loadCurrentCharacter() {
     renderInventory();
     loadCurrency();
 
+    // Initialize counterIdCounter based on this character's existing counters
+    if (char.counters && char.counters.length > 0) {
+        const maxId = Math.max(...char.counters.map(c => c.id || 0));
+        counterIdCounter = maxId + 1;
+    }
+
     updateCharacterSheet();
 }
 
@@ -4552,6 +5760,433 @@ function saveCurrentCharacter() {
     char.feats = selectedFeats;
 
     updateCharacterSelector();
+}
+
+// ============================================
+// Campaign Management Functions
+// ============================================
+
+let campaigns = JSON.parse(localStorage.getItem('campaigns')) || {};
+let currentCampaignId = null;
+
+// Load campaigns list into dropdown
+function loadCampaignsList() {
+    const select = document.getElementById('campaignSelect');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Select a campaign...</option>';
+
+    Object.keys(campaigns).forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = campaigns[id].name;
+        select.appendChild(option);
+    });
+}
+
+// Show create campaign modal
+function showCreateCampaignModal() {
+    document.getElementById('createCampaignModal').style.display = 'flex';
+    document.getElementById('newCampaignName').value = '';
+    document.getElementById('newCampaignDescription').value = '';
+}
+
+// Close create campaign modal
+function closeCreateCampaignModal() {
+    document.getElementById('createCampaignModal').style.display = 'none';
+}
+
+// Confirm create campaign
+function confirmCreateCampaign() {
+    const name = document.getElementById('newCampaignName').value.trim();
+    const description = document.getElementById('newCampaignDescription').value.trim();
+
+    if (!name) {
+        alert('Please enter a campaign name.');
+        return;
+    }
+
+    const id = 'campaign_' + Date.now();
+    campaigns[id] = {
+        name: name,
+        description: description,
+        characters: []
+    };
+
+    localStorage.setItem('campaigns', JSON.stringify(campaigns));
+    closeCreateCampaignModal();
+    loadCampaignsList();
+
+    // Select the newly created campaign
+    document.getElementById('campaignSelect').value = id;
+    loadCampaign();
+}
+
+// Load selected campaign
+function loadCampaign() {
+    const select = document.getElementById('campaignSelect');
+    const campaignId = select.value;
+
+    if (!campaignId) {
+        document.getElementById('campaignDetails').style.display = 'none';
+        document.getElementById('campaignEmptyState').style.display = 'block';
+        currentCampaignId = null;
+        return;
+    }
+
+    currentCampaignId = campaignId;
+    const campaign = campaigns[campaignId];
+
+    document.getElementById('campaignName').textContent = campaign.name;
+    document.getElementById('campaignDescription').textContent = campaign.description || 'No description';
+    document.getElementById('campaignDetails').style.display = 'block';
+    document.getElementById('campaignEmptyState').style.display = 'none';
+
+    loadAllAvailableCharacters();
+    renderCampaignCharacters();
+}
+
+// Load all available characters from all accounts
+let allAvailableCharacters = [];
+
+async function loadAllAvailableCharacters() {
+    allAvailableCharacters = [];
+
+    try {
+        // Fetch all accounts from server
+        const accounts = await getAccounts();
+
+        if (!accounts || !Array.isArray(accounts)) {
+            populateCharacterSelect([]);
+            return;
+        }
+
+        // Extract characters from each account
+        accounts.forEach(account => {
+            if (account.name && account.data && account.data.characters && Array.isArray(account.data.characters)) {
+                account.data.characters.forEach(character => {
+                    if (character.name) {
+                        allAvailableCharacters.push({
+                            username: account.name,
+                            charName: character.name,
+                            class: character.class || 'N/A',
+                            level: character.level || 1,
+                            species: character.species || 'N/A'
+                        });
+                    }
+                });
+            }
+        });
+
+        // Populate the select dropdown
+        populateCharacterSelect(allAvailableCharacters);
+    } catch (error) {
+        console.error('Error loading available characters:', error);
+        populateCharacterSelect([]);
+    }
+}
+
+// Populate character select dropdown
+function populateCharacterSelect(characters) {
+    const select = document.getElementById('availableCharactersSelect');
+    if (!select) return;
+
+    select.innerHTML = '';
+
+    if (characters.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No characters available';
+        select.appendChild(option);
+        return;
+    }
+
+    characters.forEach(char => {
+        const option = document.createElement('option');
+        option.value = JSON.stringify({ username: char.username, charName: char.charName });
+        option.textContent = `${char.charName} (@${char.username}) - ${char.class} ${char.level} (${char.species})`;
+        select.appendChild(option);
+    });
+}
+
+// Filter character list based on search input
+function filterCharacterList() {
+    const searchTerm = document.getElementById('characterSearchInput')?.value.toLowerCase() || '';
+
+    if (!searchTerm) {
+        populateCharacterSelect(allAvailableCharacters);
+        return;
+    }
+
+    const filtered = allAvailableCharacters.filter(char =>
+        char.charName.toLowerCase().includes(searchTerm) ||
+        char.username.toLowerCase().includes(searchTerm) ||
+        char.class.toLowerCase().includes(searchTerm) ||
+        char.species.toLowerCase().includes(searchTerm)
+    );
+
+    populateCharacterSelect(filtered);
+}
+
+// Delete campaign
+function deleteCampaign() {
+    if (!currentCampaignId) {
+        alert('Please select a campaign to delete.');
+        return;
+    }
+
+    const campaign = campaigns[currentCampaignId];
+    if (confirm(`Are you sure you want to delete the campaign "${campaign.name}"? This action cannot be undone.`)) {
+        delete campaigns[currentCampaignId];
+        localStorage.setItem('campaigns', JSON.stringify(campaigns));
+        currentCampaignId = null;
+        loadCampaignsList();
+        document.getElementById('campaignDetails').style.display = 'none';
+        document.getElementById('campaignEmptyState').style.display = 'block';
+        document.getElementById('campaignSelect').value = '';
+    }
+}
+
+// Add character to campaign
+function addCharacterToCampaign() {
+    if (!currentCampaignId) {
+        alert('Please select a campaign first.');
+        return;
+    }
+
+    const select = document.getElementById('availableCharactersSelect');
+    const selectedValue = select.value;
+
+    if (!selectedValue) {
+        alert('Please select a character to add.');
+        return;
+    }
+
+    // Parse the selected character data
+    let charData;
+    try {
+        charData = JSON.parse(selectedValue);
+    } catch (e) {
+        alert('Invalid character selection.');
+        return;
+    }
+
+    const { username, charName } = charData;
+
+    // Check if character is already in campaign
+    const campaign = campaigns[currentCampaignId];
+    const exists = campaign.characters.some(c => c.username === username && c.charName === charName);
+
+    if (exists) {
+        alert('This character is already in the campaign.');
+        return;
+    }
+
+    // Add character reference to campaign
+    campaign.characters.push({
+        username: username,
+        charName: charName,
+        addedDate: new Date().toISOString()
+    });
+
+    localStorage.setItem('campaigns', JSON.stringify(campaigns));
+
+    // Clear search and reload list
+    document.getElementById('characterSearchInput').value = '';
+    loadAllAvailableCharacters();
+
+    renderCampaignCharacters();
+}
+
+// Remove character from campaign
+function removeCharacterFromCampaign(username, charName) {
+    if (!currentCampaignId) return;
+
+    if (confirm(`Remove ${charName} (${username}) from this campaign?`)) {
+        const campaign = campaigns[currentCampaignId];
+        campaign.characters = campaign.characters.filter(c =>
+            !(c.username === username && c.charName === charName)
+        );
+
+        localStorage.setItem('campaigns', JSON.stringify(campaigns));
+        renderCampaignCharacters();
+    }
+}
+
+// Render campaign characters list
+async function renderCampaignCharacters() {
+    const container = document.getElementById('campaignCharactersList');
+    if (!currentCampaignId) return;
+
+    const campaign = campaigns[currentCampaignId];
+
+    if (campaign.characters.length === 0) {
+        container.innerHTML = '<p class="no-characters">No characters in this campaign yet.</p>';
+        return;
+    }
+
+    // Show loading message
+    container.innerHTML = '<p class="no-characters">Loading characters...</p>';
+
+    try {
+        // Fetch all character data from server
+        const characterDataPromises = campaign.characters.map(async (charRef) => {
+            const account = await getAccount(charRef.username);
+
+            if (!account || !account.data) {
+                return {
+                    error: true,
+                    errorMessage: 'Account not found',
+                    username: charRef.username,
+                    charName: charRef.charName
+                };
+            }
+
+            const character = account.data.characters?.find(c => c.name === charRef.charName);
+
+            if (!character) {
+                return {
+                    error: true,
+                    errorMessage: 'Character not found',
+                    username: charRef.username,
+                    charName: charRef.charName
+                };
+            }
+
+            return {
+                error: false,
+                username: charRef.username,
+                character: character
+            };
+        });
+
+        const characterDataResults = await Promise.all(characterDataPromises);
+
+        // Build HTML
+        let html = '';
+
+        characterDataResults.forEach(result => {
+            if (result.error) {
+                html += `
+                    <div class="character-card error">
+                        <div class="char-card-header">
+                            <strong>${result.charName}</strong>
+                            <span class="char-username">@${result.username} (${result.errorMessage})</span>
+                        </div>
+                        <button class="remove-char-btn" onclick="removeCharacterFromCampaign('${result.username}', '${result.charName}')">Remove</button>
+                    </div>
+                `;
+            } else {
+                const character = result.character;
+                const charId = `char-${result.username}-${character.name}`.replace(/[^a-zA-Z0-9-]/g, '_');
+
+                html += `
+                    <div class="character-card">
+                        <div class="char-card-header" onclick="toggleCharacterDetails('${charId}')">
+                            <div>
+                                <strong>${character.name}</strong>
+                                <span class="char-username">@${result.username}</span>
+                            </div>
+                            <span class="expand-icon" id="${charId}-icon">▼</span>
+                        </div>
+                        <div class="char-card-info">
+                            <div class="char-info-row">
+                                <span class="label">Class:</span> ${character.class || 'N/A'} ${character.level ? `(Lvl ${character.level})` : ''}
+                            </div>
+                            <div class="char-info-row">
+                                <span class="label">Species:</span> ${character.species || 'N/A'}
+                            </div>
+                            <div class="char-info-row">
+                                <span class="label">HP:</span> ${character.hp || 0} / ${character.maxHp || 0}
+                            </div>
+                            <div class="char-info-row">
+                                <span class="label">AC:</span> ${character.ac || 10}
+                            </div>
+                        </div>
+                        <div class="char-card-stats">
+                            <div class="stat-mini">
+                                <div class="stat-label">STR</div>
+                                <div class="stat-value">${character.str || 10}</div>
+                            </div>
+                            <div class="stat-mini">
+                                <div class="stat-label">DEX</div>
+                                <div class="stat-value">${character.dex || 10}</div>
+                            </div>
+                            <div class="stat-mini">
+                                <div class="stat-label">CON</div>
+                                <div class="stat-value">${character.con || 10}</div>
+                            </div>
+                            <div class="stat-mini">
+                                <div class="stat-label">INT</div>
+                                <div class="stat-value">${character.int || 10}</div>
+                            </div>
+                            <div class="stat-mini">
+                                <div class="stat-label">WIS</div>
+                                <div class="stat-value">${character.wis || 10}</div>
+                            </div>
+                            <div class="stat-mini">
+                                <div class="stat-label">CHA</div>
+                                <div class="stat-value">${character.cha || 10}</div>
+                            </div>
+                        </div>
+
+                        <!-- Expandable Details Section -->
+                        <div id="${charId}-details" class="char-details-section" style="display: none;">
+
+                            <!-- Feats -->
+                            <div class="char-detail-block">
+                                <h5>Feats</h5>
+                                ${character.feats && character.feats.length > 0 ? `
+                                    <ul class="char-detail-list">
+                                        ${character.feats.map(feat => `<li><strong>${feat.name}</strong>: ${feat.desc || ''}</li>`).join('')}
+                                    </ul>
+                                ` : '<p class="no-data">No feats</p>'}
+                            </div>
+
+                            <!-- Spells -->
+                            <div class="char-detail-block">
+                                <h5>Spells</h5>
+                                ${character.spells && character.spells.length > 0 ? `
+                                    <ul class="char-detail-list">
+                                        ${character.spells.map(spell => `<li><strong>${spell.name}</strong> (${spell.level || 'Cantrip'})</li>`).join('')}
+                                    </ul>
+                                ` : '<p class="no-data">No spells</p>'}
+                            </div>
+
+                            <!-- Equipment -->
+                            <div class="char-detail-block">
+                                <h5>Equipment</h5>
+                                ${character.equipment ? `<p class="char-equipment-text">${character.equipment}</p>` : '<p class="no-data">No equipment listed</p>'}
+                            </div>
+
+                            <!-- Inventory -->
+                            <div class="char-detail-block">
+                                <h5>Inventory</h5>
+                                ${character.inventory && character.inventory.length > 0 ? `
+                                    <ul class="char-detail-list">
+                                        ${character.inventory.map(item => `
+                                            <li>
+                                                <strong>${item.name}</strong> ${item.quantity > 1 ? `(x${item.quantity})` : ''}
+                                                ${item.value ? ` - ${item.value} ${item.currency || 'gp'}` : ''}
+                                                ${item.notes ? `<br><span class="item-notes">${item.notes}</span>` : ''}
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                ` : '<p class="no-data">No inventory items</p>'}
+                            </div>
+                        </div>
+
+                        <button class="remove-char-btn" onclick="removeCharacterFromCampaign('${result.username}', '${character.name}')">Remove from Campaign</button>
+                    </div>
+                `;
+            }
+        });
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Error rendering campaign characters:', error);
+        container.innerHTML = '<p class="no-characters" style="color: var(--primary);">Error loading characters. Please try again.</p>';
+    }
 }
 
 // Initialize

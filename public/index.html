@@ -120,6 +120,511 @@
             <button class="tab-button active" onclick="switchTab('dmtools')">DM Tools</button>
             <button class="tab-button" onclick="switchTab('playertools')">Player Tools</button>
             <button class="tab-button" onclick="switchTab('diceroller')">Dice Roller</button>
+            <button class="tab-button" onclick="switchTab('reference')">Reference</button>
+        </div>
+
+        <!-- Reference Section -->
+        <div id="referenceTab" class="tab-content">
+            <div class="section-tabs">
+                <button class="section-tab-button active" onclick="switchReferenceSection('quickref')">Quick Reference</button>
+                <button class="section-tab-button" onclick="switchReferenceSection('species')">Species Info</button>
+                <button class="section-tab-button" onclick="switchReferenceSection('classes')">Class Info</button>
+                <button class="section-tab-button" onclick="switchReferenceSection('rules')">Rules</button>
+                <button class="section-tab-button" onclick="switchReferenceSection('spells')">Spells</button>
+                <button class="section-tab-button" onclick="switchReferenceSection('shop')">Shop</button>
+                <button class="section-tab-button" onclick="switchReferenceSection('monsters')">Monsters</button>
+            </div>
+
+            <!-- Quick Reference Tab -->
+            <div id="quickrefSection" class="reference-section active">
+                <div class="reference-container">
+                    <h2>📖 Quick Reference</h2>
+                    <p class="reference-subtitle">Common rules and mechanics for quick lookup</p>
+
+                    <div class="reference-content">
+                        <!-- Grappling -->
+                        <div class="reference-card">
+                            <h3>🤼 Grappling (2024 PHB)</h3>
+                            <div class="reference-detail">
+                                <strong>Action Required:</strong> Attack action - make an Unarmed Strike (replaces one attack if you have Extra Attack)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>How it Works:</strong> Instead of dealing damage, target makes a Strength or Dexterity saving throw (target's choice)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Save DC:</strong> 8 + your Strength modifier + your Proficiency Bonus
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Success (target saves):</strong> Grapple fails
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Failure (target fails save):</strong> Target is Grappled (Speed = 0, can't benefit from speed bonuses)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Requirements:</strong> Target must be no more than one size larger than you. You need at least one free hand. You can only grapple one creature per hand.
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Moving Grappled Target:</strong> Every foot you move costs 1 extra foot (2 feet total per foot moved) unless target is Tiny or 2+ sizes smaller
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Escaping:</strong> Target can use their action to make a Strength or Dexterity saving throw against your Grapple DC (same DC as above)
+                            </div>
+                        </div>
+
+                        <!-- Shoving -->
+                        <div class="reference-card">
+                            <h3>💥 Shoving (2024 PHB)</h3>
+                            <div class="reference-detail">
+                                <strong>Action Required:</strong> Attack action - make an Unarmed Strike (replaces one attack if you have Extra Attack)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>How it Works:</strong> Instead of dealing damage, target makes a Strength or Dexterity saving throw (target's choice)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Save DC:</strong> 8 + your Strength modifier + your Proficiency Bonus
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Success (target saves):</strong> Shove fails
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Failure (target fails save):</strong> Push target 5 feet away from you OR knock them Prone (your choice)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Requirements:</strong> Target must be no more than one size larger than you
+                            </div>
+                        </div>
+
+                        <!-- Conditions -->
+                        <div class="reference-card">
+                            <h3>🎭 Common Conditions (2024 PHB)</h3>
+                            <div class="reference-detail">
+                                <strong>Stunned:</strong> Incapacitated, can't move, automatically fails STR/DEX saves, attacks against you have Advantage
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Prone:</strong> Disadvantage on attacks, attacks from within 5ft have Advantage, ranged attacks from >5ft have Disadvantage, costs half movement to stand
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Restrained:</strong> Speed = 0, Disadvantage on DEX saves, attacks against you have Advantage
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Incapacitated (2024):</strong> Can't take actions or reactions, can't concentrate on spells, can't speak except for short utterances, roll Initiative with Disadvantage
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Invisible (2024):</strong> Impossible to see without special senses, heavily obscured for hiding, attacks have Advantage, attacks against you have Disadvantage, roll Initiative with Advantage
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Poisoned:</strong> Disadvantage on attack rolls and ability checks
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Grappled:</strong> Speed = 0, can't benefit from speed bonuses, condition ends if grappler is Incapacitated or forced movement separates you
+                            </div>
+                        </div>
+
+                        <!-- Initiative -->
+                        <div class="reference-card">
+                            <h3>⚔️ Initiative (2024 PHB)</h3>
+                            <div class="reference-detail">
+                                <strong>How it Works:</strong> Roll 1d20 + Dexterity modifier
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Surprised (2024):</strong> If surprised when combat starts, you have Disadvantage on your Initiative roll
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Invisible (2024):</strong> If invisible, you have Advantage on your Initiative roll
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Incapacitated (2024):</strong> If incapacitated when rolling Initiative, you have Disadvantage
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Ties:</strong> DM determines order or tied creatures roll d20 (highest goes first)
+                            </div>
+                        </div>
+
+                        <!-- Spell Save DC -->
+                        <div class="reference-card">
+                            <h3>✨ Spell Save DC & Attack Bonus</h3>
+                            <div class="reference-detail">
+                                <strong>Spell Save DC:</strong> 8 + Proficiency Bonus + Spellcasting Ability Modifier
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Spell Attack Bonus:</strong> Proficiency Bonus + Spellcasting Ability Modifier
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Spellcasting Abilities:</strong>
+                                <ul style="margin: 8px 0 0 20px;">
+                                    <li>Wizard, Artificer: Intelligence</li>
+                                    <li>Cleric, Druid, Ranger: Wisdom</li>
+                                    <li>Bard, Paladin, Sorcerer, Warlock: Charisma</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Concentration -->
+                        <div class="reference-card">
+                            <h3>⚡ Concentration (2024 PHB)</h3>
+                            <div class="reference-detail">
+                                <strong>Duration:</strong> Up to the spell's duration (ends early if you cast another concentration spell, have the Incapacitated condition, or die)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>When Damaged:</strong> Make Constitution saving throw
+                            </div>
+                            <div class="reference-detail">
+                                <strong>DC (2024):</strong> 10 OR half the damage taken rounded down (whichever is higher), maximum DC of 30
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Multiple Sources:</strong> Separate save for each source of damage
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Note:</strong> About 170 of the nearly 400 spells in the 2024 PHB require Concentration
+                            </div>
+                        </div>
+
+                        <!-- Advantage/Disadvantage -->
+                        <div class="reference-card">
+                            <h3>🎲 Advantage & Disadvantage</h3>
+                            <div class="reference-detail">
+                                <strong>Advantage:</strong> Roll 2d20, use the higher result
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Disadvantage:</strong> Roll 2d20, use the lower result
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Multiple Sources:</strong> Never stack - if you have Advantage and Disadvantage from any number of sources, they cancel out
+                            </div>
+                        </div>
+
+                        <!-- Cover -->
+                        <div class="reference-card">
+                            <h3>🛡️ Cover</h3>
+                            <div class="reference-detail">
+                                <strong>Half Cover:</strong> +2 to AC and DEX saves (low wall, furniture, creatures)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Three-Quarters Cover:</strong> +5 to AC and DEX saves (portcullis, arrow slit)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Total Cover:</strong> Can't be targeted directly by attacks or spells
+                            </div>
+                        </div>
+
+                        <!-- Resting -->
+                        <div class="reference-card">
+                            <h3>😴 Resting (2024 PHB)</h3>
+                            <div class="reference-detail">
+                                <strong>Short Rest:</strong> At least 1 hour of downtime. Can spend Hit Dice to regain HP (roll Hit Die + CON modifier per die spent). Some features recharge on Short Rest.
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Long Rest (2024):</strong> At least 8 hours (max 2 hours of light activity, rest must be sleep/light activity). Regain all HP and ALL spent Hit Dice (changed from half in 2014).
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Interruptions (2024):</strong> You can resume a Long Rest immediately after an interruption, but the rest requires 1 additional hour per interruption to finish.
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Starting a Long Rest (2024):</strong> You must have at least 1 HP to initiate a Long Rest.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Species Info Tab -->
+            <div id="speciesSection" class="reference-section">
+                <div class="reference-container">
+                    <h2>🧬 Species Information</h2>
+                    <p class="reference-subtitle">Detailed information about playable species and subspecies</p>
+
+                    <div class="species-selector">
+                        <label for="speciesInfoSelect">Select Species (2024 PHB):</label>
+                        <select id="speciesInfoSelect" onchange="displaySpeciesInfo()">
+                            <option value="">Choose a species...</option>
+                            <option value="dragonborn">Dragonborn</option>
+                            <option value="dwarf">Dwarf</option>
+                            <option value="elf">Elf</option>
+                            <option value="gnome">Gnome</option>
+                            <option value="goliath">Goliath</option>
+                            <option value="halfling">Halfling</option>
+                            <option value="human">Human</option>
+                            <option value="orc">Orc</option>
+                            <option value="tiefling">Tiefling</option>
+                        </select>
+                    </div>
+
+                    <div id="speciesInfoDisplay" class="reference-content">
+                        <p class="no-selection">Select a species to view its information</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class Info Tab -->
+            <div id="classesSection" class="reference-section">
+                <div class="reference-container">
+                    <h2>🎭 Class Information</h2>
+                    <p class="reference-subtitle">Detailed information about classes and subclasses</p>
+
+                    <div class="species-selector">
+                        <label for="classInfoSelect">Select Class:</label>
+                        <select id="classInfoSelect" onchange="displayClassInfo()">
+                            <option value="">Choose a class...</option>
+                            <option value="barbarian">Barbarian</option>
+                            <option value="bard">Bard</option>
+                            <option value="cleric">Cleric</option>
+                            <option value="druid">Druid</option>
+                            <option value="fighter">Fighter</option>
+                            <option value="monk">Monk</option>
+                            <option value="paladin">Paladin</option>
+                            <option value="ranger">Ranger</option>
+                            <option value="rogue">Rogue</option>
+                            <option value="sorcerer">Sorcerer</option>
+                            <option value="warlock">Warlock</option>
+                            <option value="wizard">Wizard</option>
+                        </select>
+                    </div>
+
+                    <div id="classInfoDisplay" class="reference-content">
+                        <p class="no-selection">Select a class to view its information</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rules Tab -->
+            <div id="rulesSection" class="reference-section">
+                <div class="reference-container">
+                    <h2>📜 Game Rules</h2>
+                    <p class="reference-subtitle">Various D&D 5e rules and mechanics</p>
+
+                    <div class="reference-content">
+                        <!-- Movement -->
+                        <div class="reference-card">
+                            <h3>🏃 Movement & Actions (2024 PHB)</h3>
+                            <div class="reference-detail">
+                                <strong>Movement:</strong> You can move up to your speed on your turn
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Action:</strong> One action per turn (Attack, Cast a Spell, Dash, Disengage, Dodge, Help, Hide, Influence, Magic, Ready, Search, Study, Utilize)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Bonus Action:</strong> Some spells, features, or items grant bonus actions
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Reaction:</strong> One per round (Opportunity Attack, Ready action trigger, some spells)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Free Object Interaction:</strong> Once per turn (draw/stow weapon, open door, etc.)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Potions (2024):</strong> Drinking or administering a potion now takes a Bonus Action (changed from Action)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Weapon Draw/Stow (2024):</strong> You can draw or stow one weapon as part of an Attack action. This weapon doesn't need to be the one you're attacking with.
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Unarmed Strikes (2024):</strong> Now have 3 options: deal damage, grapple, or shove. Characters with Extra Attack can mix these options (e.g., attack, then grapple).
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Spells Per Turn (2024):</strong> You can only use one spell with a spell slot per turn, but you can also use cantrips, magic items, and scrolls with leveled spells on the same turn.
+                            </div>
+                        </div>
+
+                        <!-- Ability Checks -->
+                        <div class="reference-card">
+                            <h3>🎲 Ability Checks</h3>
+                            <div class="reference-detail">
+                                <strong>Formula:</strong> 1d20 + Ability Modifier + Proficiency Bonus (if proficient)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Skill Checks:</strong> Ability check using a specific skill
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Difficulty Classes (DC):</strong>
+                                <ul style="margin: 8px 0 0 20px;">
+                                    <li>Very Easy: DC 5</li>
+                                    <li>Easy: DC 10</li>
+                                    <li>Medium: DC 15</li>
+                                    <li>Hard: DC 20</li>
+                                    <li>Very Hard: DC 25</li>
+                                    <li>Nearly Impossible: DC 30</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Saving Throws -->
+                        <div class="reference-card">
+                            <h3>🛡️ Saving Throws</h3>
+                            <div class="reference-detail">
+                                <strong>Formula:</strong> 1d20 + Ability Modifier + Proficiency Bonus (if proficient)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Common Saves:</strong>
+                                <ul style="margin: 8px 0 0 20px;">
+                                    <li>STR: Physical restraints, being pushed</li>
+                                    <li>DEX: Dodging area effects (Fireball, breath weapons)</li>
+                                    <li>CON: Poison, disease, concentration</li>
+                                    <li>INT: Mind-affecting illusions</li>
+                                    <li>WIS: Charm, fear, mind control</li>
+                                    <li>CHA: Banishment, possession</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Combat Actions -->
+                        <div class="reference-card">
+                            <h3>⚔️ Common Combat Actions</h3>
+                            <div class="reference-detail">
+                                <strong>Attack:</strong> Make one or more attacks (based on features)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Dash:</strong> Gain extra movement equal to your speed
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Disengage:</strong> Your movement doesn't provoke opportunity attacks
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Dodge:</strong> Attacks against you have Disadvantage, you have Advantage on DEX saves (until start of next turn)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Help:</strong> Give ally Advantage on next ability check OR attack roll against creature within 5ft of you
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Hide:</strong> Make Stealth check to become hidden
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Ready:</strong> Prepare an action to trigger on a specific condition
+                            </div>
+                        </div>
+
+                        <!-- Death & Dying -->
+                        <div class="reference-card">
+                            <h3>💀 Death Saving Throws</h3>
+                            <div class="reference-detail">
+                                <strong>When:</strong> Start of your turn while at 0 HP
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Roll:</strong> 1d20 (no modifiers)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Success:</strong> 10 or higher (3 successes = stabilized)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Failure:</strong> 9 or lower (3 failures = dead)
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Natural 1:</strong> Counts as 2 failures
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Natural 20:</strong> Regain 1 HP immediately
+                            </div>
+                            <div class="reference-detail">
+                                <strong>Taking Damage:</strong> One failure (or 2 failures if critical hit). If damage >= max HP, instant death
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shop Tab -->
+            <div id="shopSection" class="reference-section">
+                <div class="reference-container">
+                    <h2>🛒 Shop</h2>
+                    <p class="reference-subtitle">Item prices and availability from the 2024 PHB</p>
+
+                    <!-- Shop Sub-Tabs -->
+                    <div class="shop-tabs">
+                        <button class="shop-tab-button active" onclick="switchShopCategory('weapons')">Weapons</button>
+                        <button class="shop-tab-button" onclick="switchShopCategory('armor')">Armor</button>
+                        <button class="shop-tab-button" onclick="switchShopCategory('gear')">Adventuring Gear</button>
+                        <button class="shop-tab-button" onclick="switchShopCategory('tools')">Tools</button>
+                        <button class="shop-tab-button" onclick="switchShopCategory('food')">Food & Lodging</button>
+                        <button class="shop-tab-button" onclick="switchShopCategory('services')">Services</button>
+                        <button class="shop-tab-button" onclick="switchShopCategory('transport')">Transportation</button>
+                    </div>
+
+                    <!-- Shop Filter -->
+                    <div class="shop-filters">
+                        <input type="text" id="shopSearch" placeholder="Search items..." oninput="filterShopItems()" />
+                        <select id="settlementFilter" onchange="filterShopItems()">
+                            <option value="all">All Locations</option>
+                            <option value="village">Village</option>
+                            <option value="town">Town</option>
+                            <option value="city">City</option>
+                        </select>
+                    </div>
+
+                    <!-- Shop Content -->
+                    <div id="shopContent" class="shop-content">
+                        <!-- Shop items will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spells Tab -->
+            <div id="spellsSection" class="reference-section">
+                <div class="reference-container">
+                    <h2>✨ Spells</h2>
+                    <p class="reference-subtitle">Complete D&D 2024 spell list with descriptions</p>
+
+                    <!-- Spell Filters -->
+                    <div class="spell-filters">
+                        <input type="text" id="spellSearch" placeholder="Search spells..." oninput="filterReferenceSpells()" />
+                        <select id="spellLevelFilter" onchange="filterReferenceSpells()">
+                            <option value="all">All Levels</option>
+                            <option value="cantrip">Cantrips</option>
+                            <option value="level1">1st Level</option>
+                            <option value="level2">2nd Level</option>
+                            <option value="level3">3rd Level</option>
+                            <option value="level4">4th Level</option>
+                            <option value="level5">5th Level</option>
+                            <option value="level6">6th Level</option>
+                            <option value="level7">7th Level</option>
+                            <option value="level8">8th Level</option>
+                            <option value="level9">9th Level</option>
+                        </select>
+                        <select id="spellClassFilter" onchange="filterReferenceSpells()">
+                            <option value="all">All Classes</option>
+                            <option value="Bard">Bard</option>
+                            <option value="Cleric">Cleric</option>
+                            <option value="Druid">Druid</option>
+                            <option value="Paladin">Paladin</option>
+                            <option value="Ranger">Ranger</option>
+                            <option value="Sorcerer">Sorcerer</option>
+                            <option value="Warlock">Warlock</option>
+                            <option value="Wizard">Wizard</option>
+                        </select>
+                        <select id="spellSchoolFilter" onchange="filterReferenceSpells()">
+                            <option value="all">All Schools</option>
+                            <option value="Abjuration">Abjuration</option>
+                            <option value="Conjuration">Conjuration</option>
+                            <option value="Divination">Divination</option>
+                            <option value="Enchantment">Enchantment</option>
+                            <option value="Evocation">Evocation</option>
+                            <option value="Illusion">Illusion</option>
+                            <option value="Necromancy">Necromancy</option>
+                            <option value="Transmutation">Transmutation</option>
+                        </select>
+                    </div>
+
+                    <!-- Spell Content -->
+                    <div id="spellContent" class="spell-content">
+                        <!-- Spells will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monsters Tab -->
+            <div id="monstersSection" class="reference-section">
+                <div class="reference-container">
+                    <h2>👹 Monsters</h2>
+                    <p class="reference-subtitle">Browse and search D&D monsters</p>
+
+                    <div class="monsters-redirect">
+                        <p style="color: var(--text); margin-bottom: 20px; text-align: center;">
+                            The full Monster Browser is available in the DM Tools section.
+                        </p>
+                        <button class="monster-browser-link" onclick="switchTab('dmtools'); switchSection('browser');">
+                            Open Monster Browser
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- DM Tools Section -->
@@ -127,6 +632,7 @@
             <div class="section-tabs">
                 <button class="section-tab-button active" onclick="switchSection('encounter')">Encounter Generator</button>
                 <button class="section-tab-button" onclick="switchSection('browser')">Monster Browser</button>
+                <button class="section-tab-button" onclick="switchSection('campaigns')">Campaigns</button>
             </div>
 
         <!-- Encounter Generator Tab -->
@@ -253,6 +759,64 @@
                         <p>Select a monster to view details</p>
                     </div>
                 </main>
+            </div>
+        </div>
+
+        <!-- Campaigns Tab -->
+        <div id="campaignsTab" class="tab-content">
+            <div class="campaigns-container">
+                <h2>📚 Campaign Management</h2>
+
+                <!-- Campaign Selection/Creation -->
+                <div class="campaign-header">
+                    <div class="campaign-selector">
+                        <label>Current Campaign:</label>
+                        <select id="campaignSelect" onchange="loadCampaign()">
+                            <option value="">Select a campaign...</option>
+                        </select>
+                        <button class="campaign-btn create-btn" onclick="showCreateCampaignModal()">+ New Campaign</button>
+                        <button class="campaign-btn delete-btn" onclick="deleteCampaign()">Delete Campaign</button>
+                    </div>
+                </div>
+
+                <!-- Campaign Details -->
+                <div id="campaignDetails" class="campaign-details" style="display: none;">
+                    <div class="campaign-info">
+                        <h3 id="campaignName"></h3>
+                        <p id="campaignDescription" class="campaign-description"></p>
+                    </div>
+
+                    <!-- Add Character Section -->
+                    <div class="add-character-section">
+                        <h4>Add Character to Campaign</h4>
+                        <div class="add-character-form">
+                            <div class="input-group">
+                                <label>Search Characters:</label>
+                                <input type="text" id="characterSearchInput" placeholder="Search by character or username..." oninput="filterCharacterList()" />
+                            </div>
+                            <div class="input-group">
+                                <label>Select Character:</label>
+                                <select id="availableCharactersSelect" size="5">
+                                    <option value="">No characters available</option>
+                                </select>
+                            </div>
+                            <button class="campaign-btn add-btn" onclick="addCharacterToCampaign()">Add to Campaign</button>
+                        </div>
+                    </div>
+
+                    <!-- Campaign Characters List -->
+                    <div class="campaign-characters">
+                        <h4>Campaign Characters</h4>
+                        <div id="campaignCharactersList" class="characters-list">
+                            <p class="no-characters">No characters in this campaign yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="campaignEmptyState" class="campaign-empty-state">
+                    <p>Select or create a campaign to get started.</p>
+                </div>
             </div>
         </div>
         </div>
@@ -1292,6 +1856,30 @@
                 <div class="modal-actions">
                     <button class="modal-btn cancel-btn" onclick="closeDeleteEncounterModal()">Cancel</button>
                     <button class="modal-btn confirm-btn delete-confirm-btn" onclick="confirmDeleteEncounter()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Campaign Modal -->
+    <div id="createCampaignModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Create New Campaign</h2>
+                <button class="modal-close" onclick="closeCreateCampaignModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newCampaignName">Campaign Name</label>
+                    <input type="text" id="newCampaignName" placeholder="e.g., Lost Mines of Phandelver" />
+                </div>
+                <div class="form-group">
+                    <label for="newCampaignDescription">Description (Optional)</label>
+                    <textarea id="newCampaignDescription" placeholder="Enter campaign description..." rows="4"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" onclick="closeCreateCampaignModal()">Cancel</button>
+                    <button class="modal-btn confirm-btn" onclick="confirmCreateCampaign()">Create</button>
                 </div>
             </div>
         </div>

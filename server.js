@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = 8347;
 const SRD_API_BASE = 'https://www.dnd5eapi.co/api';
 const CACHE_DIR = path.join(__dirname, 'cache');
 const MONSTERS_CACHE_FILE = path.join(CACHE_DIR, 'monsters-full.json');
@@ -399,9 +399,43 @@ app.get('/api/get-encounters', async (req, res) => {
     }
 });
 
+// Ensure Admin account exists
+async function ensureAdminAccount() {
+    try {
+        const accounts = await loadAccounts();
+
+        // Check if Admin account exists
+        if (!accounts.some(acc => acc.name === 'Admin')) {
+            // Create Admin account
+            const adminAccount = {
+                name: 'Admin',
+                hasPassword: false,
+                password: '',
+                data: {
+                    character: {},
+                    counters: [],
+                    feats: [],
+                    equipment: [],
+                    savedEncounters: [],
+                    monsterLibrary: [],
+                    spells: [],
+                    customCharacters: []
+                }
+            };
+
+            accounts.push(adminAccount);
+            await saveAccounts(accounts);
+            console.log('✅ Admin account created');
+        }
+    } catch (error) {
+        console.error('Error ensuring Admin account:', error);
+    }
+}
+
 // Start server
 async function startServer() {
     await loadMonstersCache();
+    await ensureAdminAccount();
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`\n🐉 D&D Monster Viewer running at http://localhost:${PORT}`);
         console.log(`📚 Cached ${monstersCache.metadata.total_monsters} monsters`);

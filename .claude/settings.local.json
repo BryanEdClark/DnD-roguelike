@@ -26,7 +26,13 @@
       "Read(//c/**)",
       "Bash(npm install:*)",
       "Bash(npx playwright install:*)",
-      "Bash(npx playwright test:*)"
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(npm test:*)",
+      "Bash(ipconfig)",
+      "Bash(set PORT=8347)",
+      "WebFetch(domain:docs.google.com)"
     ],
     "deny": [],
     "ask": []

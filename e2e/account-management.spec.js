@@ -10,39 +10,45 @@ test.describe('Account Management', () => {
   });
 
   test('should display login screen on initial load', async ({ page }) => {
-    await expect(page.locator('.login-screen')).toBeVisible();
-    await expect(page.locator('h1')).toContainText('D&D Play Tools');
-    await expect(page.locator('.trogdor-logo')).toBeVisible();
+    const loginScreen = page.locator('#loginScreen');
+    await expect(loginScreen).toBeVisible();
+    await expect(loginScreen.locator('.logo-header h1')).toContainText('D&D Play Tools');
+    await expect(loginScreen.locator('.trogdor-logo')).toBeVisible();
   });
 
   test('should show login and signup buttons', async ({ page }) => {
-    await expect(page.locator('text=Login')).toBeVisible();
-    await expect(page.locator('text=Sign Up')).toBeVisible();
+    const loginScreen = page.locator('#loginScreen');
+    await expect(loginScreen.locator('.login-buttons .login-btn:has-text("Login")')).toBeVisible();
+    await expect(loginScreen.locator('.login-buttons .signup-btn:has-text("Sign Up")')).toBeVisible();
   });
 
   test('should open signup modal when Sign Up is clicked', async ({ page }) => {
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
     await expect(page.locator('#signupModal')).toBeVisible();
-    await expect(page.locator('#signupModal h2')).toContainText('Create Account');
+    await expect(page.locator('#signupModal .modal-header h2')).toContainText('Create Account');
   });
 
   test('should create new account without password', async ({ page }) => {
     const accountName = `TestUser_${Date.now()}`;
 
     // Open signup modal
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
 
     // Fill in account name
     await page.fill('#signupAccountName', accountName);
 
     // Leave password blank and submit
-    await page.click('#signupModal button:has-text("Create Account")');
+    await page.click('#signupModal .modal-actions .confirm-btn');
 
     // Wait for redirect to main page
-    await page.waitForSelector('.container', { state: 'visible' });
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
 
     // Verify logged in
-    await expect(page.locator('.current-user')).toContainText(accountName);
+    await expect(page.locator('#mainApp .current-user')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#mainApp .current-user')).toContainText(accountName);
   });
 
   test('should create new account with password', async ({ page }) => {
@@ -50,43 +56,54 @@ test.describe('Account Management', () => {
     const password = 'testpass123';
 
     // Open signup modal
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
 
     // Fill in credentials
     await page.fill('#signupAccountName', accountName);
     await page.fill('#signupPassword', password);
 
     // Submit
-    await page.click('#signupModal button:has-text("Create Account")');
+    await page.click('#signupModal .modal-actions .confirm-btn');
 
     // Wait for main page
-    await page.waitForSelector('.container', { state: 'visible' });
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
 
     // Verify logged in
-    await expect(page.locator('.current-user')).toContainText(accountName);
+    await expect(page.locator('#mainApp .current-user')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#mainApp .current-user')).toContainText(accountName);
   });
 
   test('should login to existing account', async ({ page }) => {
     const accountName = `LoginTest_${Date.now()}`;
 
     // Create account first
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
     await page.fill('#signupAccountName', accountName);
-    await page.click('#signupModal button:has-text("Create Account")');
-    await page.waitForSelector('.container', { state: 'visible' });
+    await page.click('#signupModal .modal-actions .confirm-btn');
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
 
     // Logout
-    await page.click('.logout-btn');
-    await page.waitForSelector('.login-screen', { state: 'visible' });
+    await page.click('#mainApp .logout-btn');
+    await expect(page.locator('#loginScreen')).toBeVisible();
 
     // Login again
-    await page.click('text=Login');
+    await page.click('#loginScreen .login-buttons .login-btn');
     await page.fill('#loginAccountName', accountName);
-    await page.click('#loginModal button:has-text("Login")');
+    await page.click('#loginModal .modal-actions .confirm-btn');
 
     // Verify logged in
-    await page.waitForSelector('.container', { state: 'visible' });
-    await expect(page.locator('.current-user')).toContainText(accountName);
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
+    await expect(page.locator('#mainApp .current-user')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#mainApp .current-user')).toContainText(accountName);
   });
 
   test('should validate password on protected account', async ({ page }) => {
@@ -94,38 +111,45 @@ test.describe('Account Management', () => {
     const password = 'secretpass';
 
     // Create password-protected account
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
     await page.fill('#signupAccountName', accountName);
     await page.fill('#signupPassword', password);
-    await page.click('#signupModal button:has-text("Create Account")');
-    await page.waitForSelector('.container', { state: 'visible' });
+    await page.click('#signupModal .modal-actions .confirm-btn');
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
 
     // Logout
-    await page.click('.logout-btn');
+    await page.click('#mainApp .logout-btn');
 
     // Try to login with wrong password
-    await page.click('text=Login');
+    await page.click('#loginScreen .login-buttons .login-btn');
     await page.fill('#loginAccountName', accountName);
     await page.fill('#loginPassword', 'wrongpassword');
-    await page.click('#loginModal button:has-text("Login")');
+    await page.click('#loginModal .modal-actions .confirm-btn');
 
     // Should show incorrect password modal
     await expect(page.locator('#incorrectPasswordModal')).toBeVisible();
 
     // Close modal and try again with correct password
-    await page.click('#incorrectPasswordModal button:has-text("Retry")');
+    await page.click('#incorrectPasswordModal .modal-actions .confirm-btn');
     await page.fill('#loginPassword', password);
-    await page.click('#loginModal button:has-text("Login")');
+    await page.click('#loginModal .modal-actions .confirm-btn');
 
     // Should login successfully
-    await page.waitForSelector('.container', { state: 'visible' });
-    await expect(page.locator('.current-user')).toContainText(accountName);
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
+    await expect(page.locator('#mainApp .current-user')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#mainApp .current-user')).toContainText(accountName);
   });
 
   test('should handle account not found', async ({ page }) => {
-    await page.click('text=Login');
+    await page.click('#loginScreen .login-buttons .login-btn');
     await page.fill('#loginAccountName', 'NonExistentUser');
-    await page.click('#loginModal button:has-text("Login")');
+    await page.click('#loginModal .modal-actions .confirm-btn');
 
     // Should show account not found modal
     await expect(page.locator('#accountNotFoundModal')).toBeVisible();
@@ -135,18 +159,21 @@ test.describe('Account Management', () => {
     const accountName = `DuplicateTest_${Date.now()}`;
 
     // Create first account
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
     await page.fill('#signupAccountName', accountName);
-    await page.click('#signupModal button:has-text("Create Account")');
-    await page.waitForSelector('.container', { state: 'visible' });
+    await page.click('#signupModal .modal-actions .confirm-btn');
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
 
     // Logout
-    await page.click('.logout-btn');
+    await page.click('#mainApp .logout-btn');
 
     // Try to create duplicate
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
     await page.fill('#signupAccountName', accountName);
-    await page.click('#signupModal button:has-text("Create Account")');
+    await page.click('#signupModal .modal-actions .confirm-btn');
 
     // Should show error (account already exists)
     // Note: Implementation may vary - check for alert or modal
@@ -157,16 +184,19 @@ test.describe('Account Management', () => {
     const accountName = `LogoutTest_${Date.now()}`;
 
     // Create and login
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
     await page.fill('#signupAccountName', accountName);
-    await page.click('#signupModal button:has-text("Create Account")');
-    await page.waitForSelector('.container', { state: 'visible' });
+    await page.click('#signupModal .modal-actions .confirm-btn');
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
 
     // Logout
-    await page.click('.logout-btn');
+    await page.click('#mainApp .logout-btn');
 
     // Should return to login screen
-    await expect(page.locator('.login-screen')).toBeVisible();
+    await expect(page.locator('#loginScreen')).toBeVisible();
   });
 });
 
@@ -176,13 +206,17 @@ test.describe('Admin Panel', () => {
     await page.goto('/');
 
     // Login as Admin
-    await page.click('text=Login');
+    await page.click('#loginScreen .login-buttons .login-btn');
     await page.fill('#loginAccountName', 'Admin');
-    await page.click('#loginModal button:has-text("Login")');
+    await page.click('#loginModal .modal-actions .confirm-btn');
 
     // Should show admin panel
-    await page.waitForSelector('#adminPage', { state: 'visible' });
-    await expect(page.locator('h1')).toContainText('Admin Panel');
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
+    await expect(page.locator('#adminPage')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#adminPage .header-content h1')).toContainText('Admin Panel');
   });
 
   test('should display all accounts in admin panel', async ({ page }) => {
@@ -190,20 +224,27 @@ test.describe('Admin Panel', () => {
 
     // Create a test account first
     const accountName = `AdminViewTest_${Date.now()}`;
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
     await page.fill('#signupAccountName', accountName);
-    await page.click('#signupModal button:has-text("Create Account")');
-    await page.waitForSelector('.container', { state: 'visible' });
-    await page.click('.logout-btn');
+    await page.click('#signupModal .modal-actions .confirm-btn');
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
+    await page.click('#mainApp .logout-btn');
 
     // Login as Admin
-    await page.click('text=Login');
+    await page.click('#loginScreen .login-buttons .login-btn');
     await page.fill('#loginAccountName', 'Admin');
-    await page.click('#loginModal button:has-text("Login")');
+    await page.click('#loginModal .modal-actions .confirm-btn');
 
     // Admin panel should show accounts
-    await page.waitForSelector('#adminAccountsList', { state: 'visible' });
-    await expect(page.locator(`text=${accountName}`)).toBeVisible();
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
+    await expect(page.locator('#adminAccountsList')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`#adminAccountsList .admin-account-card:has-text("${accountName}")`)).toBeVisible();
   });
 
   test('should delete account from admin panel', async ({ page }) => {
@@ -211,17 +252,24 @@ test.describe('Admin Panel', () => {
 
     // Create account to delete
     const accountName = `ToDelete_${Date.now()}`;
-    await page.click('text=Sign Up');
+    await page.click('#loginScreen .login-buttons .signup-btn');
     await page.fill('#signupAccountName', accountName);
-    await page.click('#signupModal button:has-text("Create Account")');
-    await page.waitForSelector('.container', { state: 'visible' });
-    await page.click('.logout-btn');
+    await page.click('#signupModal .modal-actions .confirm-btn');
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
+    await page.click('#mainApp .logout-btn');
 
     // Login as Admin
-    await page.click('text=Login');
+    await page.click('#loginScreen .login-buttons .login-btn');
     await page.fill('#loginAccountName', 'Admin');
-    await page.click('#loginModal button:has-text("Login")');
-    await page.waitForSelector('#adminAccountsList', { state: 'visible' });
+    await page.click('#loginModal .modal-actions .confirm-btn');
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
+    await expect(page.locator('#adminAccountsList')).toBeVisible({ timeout: 10000 });
 
     // Find and delete the account
     const accountCard = page.locator(`.admin-account-card:has-text("${accountName}")`);
@@ -231,7 +279,7 @@ test.describe('Admin Panel', () => {
     await accountCard.locator('.admin-delete-btn').click();
 
     // Confirm deletion in modal
-    await page.click('#deleteAccountModal button:has-text("Delete")');
+    await page.click('#adminDeleteModal .modal-actions .confirm-btn');
 
     // Account should be removed from list
     await expect(accountCard).not.toBeVisible();
@@ -241,9 +289,15 @@ test.describe('Admin Panel', () => {
     await page.goto('/');
 
     // Login as Admin
-    await page.click('text=Login');
+    await page.click('#loginScreen .login-buttons .login-btn');
     await page.fill('#loginAccountName', 'Admin');
-    await page.click('#loginModal button:has-text("Login")');
+    await page.click('#loginModal .modal-actions .confirm-btn');
+
+    // Wait for admin page to load
+    await page.waitForFunction(() => {
+      const loginScreen = document.querySelector('#loginScreen');
+      return !loginScreen || loginScreen.style.display === 'none';
+    }, { timeout: 10000 });
 
     // Click refresh button
     await page.click('.admin-refresh-btn');

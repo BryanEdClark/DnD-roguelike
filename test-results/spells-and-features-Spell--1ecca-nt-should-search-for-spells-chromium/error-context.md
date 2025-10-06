@@ -1,0 +1,115 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]:
+            - img "Trogdor" [ref=e7]
+            - heading "D&D Play Tools" [level=1] [ref=e8]
+          - paragraph [ref=e9]: Fine I'll make my own tools!
+        - generic [ref=e10]:
+          - generic [ref=e11]: "User: SpellTest_1759678738803"
+          - button "Logout" [ref=e12] [cursor=pointer]
+    - generic [ref=e13]:
+      - button "DM Tools" [ref=e14] [cursor=pointer]
+      - button "Player Tools" [ref=e15] [cursor=pointer]
+      - button "Dice Roller" [ref=e16] [cursor=pointer]
+    - generic [ref=e17]:
+      - generic [ref=e19]:
+        - combobox [ref=e20] [cursor=pointer]:
+          - option "Character 1" [selected]
+        - button "+ New Character" [ref=e21] [cursor=pointer]
+        - button "Delete" [ref=e22] [cursor=pointer]
+      - generic [ref=e23]:
+        - button "Character Sheet" [ref=e24] [cursor=pointer]
+        - button "Equipment" [ref=e25] [cursor=pointer]
+        - button "Inventory" [ref=e26] [cursor=pointer]
+        - button "Spells" [ref=e27] [cursor=pointer]
+        - button "Feats" [ref=e28] [cursor=pointer]
+        - button "Counters" [ref=e29] [cursor=pointer]
+      - generic [ref=e31]:
+        - heading "✨ Spells" [level=2] [ref=e32]
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e35]: Spell Save DC
+            - generic [ref=e36]: "--"
+          - generic [ref=e37]:
+            - generic [ref=e38]: Spell Attack Bonus
+            - generic [ref=e39]: "--"
+          - generic [ref=e40]:
+            - generic [ref=e41]: "Spellcasting Ability:"
+            - combobox "Spellcasting Ability:" [ref=e42]:
+              - option "Select ability" [selected]
+              - option "Intelligence"
+              - option "Wisdom"
+              - option "Charisma"
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - heading "⚡ Concentration Check" [level=3] [ref=e45]
+            - paragraph [ref=e46]: Check if you maintain concentration after taking damage
+          - generic [ref=e47]:
+            - generic [ref=e48]:
+              - generic [ref=e49]: "Damage Taken:"
+              - spinbutton "Damage Taken:" [ref=e50]: "0"
+            - generic [ref=e51]:
+              - generic [ref=e52]: "CON Save Bonus:"
+              - spinbutton "CON Save Bonus:" [ref=e53]
+          - generic [ref=e54]:
+            - generic [ref=e55]:
+              - generic [ref=e56]: "Required DC:"
+              - generic [ref=e57]: "10"
+            - generic [ref=e59]:
+              - generic [ref=e60]:
+                - generic [ref=e61] [cursor=pointer]:
+                  - checkbox "Advantage" [ref=e62] [cursor=pointer]
+                  - generic [ref=e63] [cursor=pointer]: Advantage
+                - generic [ref=e64] [cursor=pointer]:
+                  - checkbox "Disadvantage" [ref=e65] [cursor=pointer]
+                  - generic [ref=e66] [cursor=pointer]: Disadvantage
+              - button "🎲 Roll CON Save" [ref=e67] [cursor=pointer]
+        - generic [ref=e68]:
+          - button "+ Add Spell" [ref=e70] [cursor=pointer]
+          - paragraph [ref=e72]: No spells selected. Click "Add Spell" to browse available spells.
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - heading "Select Spell" [level=2] [ref=e76]
+          - button "×" [ref=e77] [cursor=pointer]
+        - generic [ref=e78]:
+          - textbox "Search spells..." [active] [ref=e80]: fireball
+          - generic [ref=e82] [cursor=pointer]:
+            - checkbox "Show all class spells" [ref=e83]
+            - text: Show all class spells
+        - generic [ref=e84]:
+          - button "Cantrips" [ref=e85] [cursor=pointer]
+          - button "1" [ref=e86] [cursor=pointer]
+          - button "2" [ref=e87] [cursor=pointer]
+          - button "3" [ref=e88] [cursor=pointer]
+          - button "4" [ref=e89] [cursor=pointer]
+          - button "5" [ref=e90] [cursor=pointer]
+          - button "6" [ref=e91] [cursor=pointer]
+          - button "7" [ref=e92] [cursor=pointer]
+          - button "8" [ref=e93] [cursor=pointer]
+          - button "9" [ref=e94] [cursor=pointer]
+        - generic [ref=e97]:
+          - generic [ref=e98] [cursor=pointer]:
+            - heading "Sanctuary" [level=4] [ref=e99] [cursor=pointer]
+            - generic [ref=e100] [cursor=pointer]: Abjuration • 1st Level • Cleric
+            - paragraph [ref=e101] [cursor=pointer]: You ward a creature within range against attack. Until the spell ends, any creature who targets the warded creature with an attack or a harmful spell must first make a wisdom saving throw. On a failed save, the creature must choose a new target or lose the attack or spell. This spell doesn't protect the warded creature from area effects, such as the explosion of a fireball. If the warded creature makes an attack or casts a spell that affects an enemy creature, this spell ends.
+          - generic [ref=e102] [cursor=pointer]:
+            - heading "Fireball" [level=4] [ref=e103] [cursor=pointer]
+            - generic [ref=e104] [cursor=pointer]: Evocation • 3rd Level • Sorcerer, Wizard
+            - paragraph [ref=e105] [cursor=pointer]: A bright streak flashes from your pointing finger to a point you choose within range and then blossoms with a low roar into an explosion of flame. Each creature in a 20-foot-radius sphere centered on that point must make a dexterity saving throw. A target takes 8d6 fire damage on a failed save, or half as much damage on a successful one. The fire spreads around corners. It ignites flammable objects in the area that aren't being worn or carried.
+          - generic [ref=e106] [cursor=pointer]:
+            - heading "Delayed Blast Fireball" [level=4] [ref=e107] [cursor=pointer]
+            - generic [ref=e108] [cursor=pointer]: Evocation • 7th Level • Sorcerer, Wizard
+            - paragraph [ref=e109] [cursor=pointer]: A beam of yellow light flashes from your pointing finger, then condenses to linger at a chosen point within range as a glowing bead for the duration. When the spell ends, either because your concentration is broken or because you decide to end it, the bead blossoms with a low roar into an explosion of flame that spreads around corners. Each creature in a 20-foot-radius sphere centered on that point must make a dexterity saving throw. A creature takes fire damage equal to the total accumulated damage on a failed save, or half as much damage on a successful one. The spell's base damage is 12d6. If at the end of your turn the bead has not yet detonated, the damage increases by 1d6. If the glowing bead is touched before the interval has expired, the creature touching it must make a dexterity saving throw. On a failed save, the spell ends immediately, causing the bead to erupt in flame. On a successful save, the creature can throw the bead up to 40 feet. When it strikes a creature or a solid object, the spell ends, and the bead explodes. The fire damages objects in the area and ignites flammable objects that aren't being worn or carried.
+          - generic [ref=e110] [cursor=pointer]:
+            - heading "Antimagic Field" [level=4] [ref=e111] [cursor=pointer]
+            - generic [ref=e112] [cursor=pointer]: Abjuration • 8th Level • Cleric, Wizard
+            - paragraph [ref=e113] [cursor=pointer]: A 10-foot-radius invisible sphere of antimagic surrounds you. This area is divorced from the magical energy that suffuses the multiverse. Within the sphere, spells can't be cast, summoned creatures disappear, and even magic items become mundane. Until the spell ends, the sphere moves with you, centered on you. Spells and other magical effects, except those created by an artifact or a deity, are suppressed in the sphere and can't protrude into it. A slot expended to cast a suppressed spell is consumed. While an effect is suppressed, it doesn't function, but the time it spends suppressed counts against its duration. ***Targeted Effects.*** Spells and other magical effects, such as magic missile and charm person, that target a creature or an object in the sphere have no effect on that target. ***Areas of Magic.*** The area of another spell or magical effect, such as fireball, can't extend into the sphere. If the sphere overlaps an area of magic, the part of the area that is covered by the sphere is suppressed. For example, the flames created by a wall of fire are suppressed within the sphere, creating a gap in the wall if the overlap is large enough. ***Spells.*** Any active spell or other magical effect on a creature or an object in the sphere is suppressed while the creature or object is in it. ***Magic Items.*** The properties and powers of magic items are suppressed in the sphere. For example, a +1 longsword in the sphere functions as a nonmagical longsword. A magic weapon's properties and powers are suppressed if it is used against a target in the sphere or wielded by an attacker in the sphere. If a magic weapon or a piece of magic ammunition fully leaves the sphere (for example, if you fire a magic arrow or throw a magic spear at a target outside the sphere), the magic of the item ceases to be suppressed as soon as it exits. ***Magical Travel.*** Teleportation and planar travel fail to work in the sphere, whether the sphere is the destination or the departure point for such magical travel. A portal to another location, world, or plane of existence, as well as an opening to an extradimensional space such as that created by the rope trick spell, temporarily closes while in the sphere. ***Creatures and Objects.*** A creature or object summoned or created by magic temporarily winks out of existence in the sphere. Such a creature instantly reappears once the space the creature occupied is no longer within the sphere. ***Dispel Magic.*** Spells and magical effects such as dispel magic have no effect on the sphere. Likewise, the spheres created by different antimagic field spells don't nullify each other.
+  - contentinfo [ref=e114]:
+    - paragraph [ref=e115] [cursor=pointer]: The Blackjack and Hookers
+```
