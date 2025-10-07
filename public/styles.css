@@ -4591,6 +4591,95 @@ header .logo-header .trogdor-logo {
     background: #7a1515;
 }
 
+/* Character Details Expandable Section */
+.char-card-header {
+    cursor: pointer;
+    user-select: none;
+}
+
+.expand-icon {
+    color: var(--primary);
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.char-details-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+}
+
+.char-detail-block {
+    margin-bottom: 20px;
+}
+
+.char-detail-block h5 {
+    color: var(--primary);
+    font-size: 1rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.char-detail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.char-detail-list li {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background: var(--dark);
+    border-radius: 4px;
+    border-left: 3px solid var(--primary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.char-detail-list li strong {
+    color: var(--secondary);
+}
+
+.clickable-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.clickable-item:hover {
+    background: var(--darker) !important;
+    border-left-color: var(--secondary) !important;
+    transform: translateX(5px);
+}
+
+.clickable-item strong {
+    text-decoration: underline;
+    text-decoration-color: var(--primary);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.char-equipment-text {
+    padding: 10px;
+    background: var(--dark);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.item-notes {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.no-data {
+    color: var(--text-dim);
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
 .no-characters {
     text-align: center;
     color: var(--text-dim);
@@ -4631,5 +4720,14 @@ header .logo-header .trogdor-logo {
 
     .char-card-stats {
         grid-template-columns: repeat(3, 1fr);
+    }
+
+    .char-detail-list li {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+
+    .char-equipment-text {
+        font-size: 0.85rem;
     }
 }

@@ -1422,7 +1422,18 @@ function renderReferenceSpells() {
     const schoolFilter = document.getElementById('spellSchoolFilter')?.value || 'all';
     const content = document.getElementById('spellContent');
 
-    if (!content || typeof spellsData === 'undefined') return;
+    console.log('renderReferenceSpells called', { content: !!content, spellsDataExists: typeof spellsData !== 'undefined' });
+
+    if (!content) {
+        console.error('spellContent element not found');
+        return;
+    }
+
+    if (typeof spellsData === 'undefined') {
+        console.error('spellsData is undefined');
+        content.innerHTML = '<p style="text-align: center; color: var(--text-dim); padding: 40px;">Error: Spell data not loaded</p>';
+        return;
+    }
 
     let html = '';
     const levelNames = {
@@ -1849,6 +1860,87 @@ const subclasses = {
     Sorcerer: ['Aberrant Sorcery', 'Clockwork Sorcery', 'Draconic Sorcery', 'Wild Magic Sorcery'],
     Warlock: ['Archfey Patron', 'Celestial Patron', 'Fiend Patron', 'Great Old One Patron'],
     Wizard: ['Abjurer', 'Diviner', 'Evoker', 'Illusionist']
+};
+
+// Subclass-granted spells by level (D&D 2024)
+const subclassSpellsByLevel = {
+    // Sorcerer Subclasses
+    'Draconic Sorcery': {
+        3: ['Chromatic Orb', 'Command'],
+        5: ['Dragon\'s Breath', 'Fear'],
+        7: ['Elemental Bane', 'Stoneskin'],
+        9: ['Dominate Person', 'Cone of Cold']
+    },
+    'Aberrant Sorcery': {
+        3: ['Arms of Hadar', 'Dissonant Whispers'],
+        5: ['Calm Emotions', 'Detect Thoughts'],
+        7: ['Hunger of Hadar', 'Sending'],
+        9: ['Evard\'s Black Tentacles', 'Summon Aberration']
+    },
+    'Clockwork Sorcery': {
+        3: ['Aid', 'Alarm'],
+        5: ['Aid', 'Lesser Restoration'],
+        7: ['Dispel Magic', 'Protection from Energy'],
+        9: ['Freedom of Movement', 'Summon Construct']
+    },
+    'Wild Magic Sorcery': {
+        3: ['Chaos Bolt', 'Detect Magic'],
+        5: ['Blur', 'Phantasmal Force'],
+        7: ['Blink', 'Enemies Abound'],
+        9: ['Confusion', 'Polymorph']
+    },
+
+    // Cleric Domain Spells
+    'Life Domain': {
+        3: ['Bless', 'Cure Wounds'],
+        5: ['Aid', 'Lesser Restoration'],
+        7: ['Beacon of Hope', 'Revivify'],
+        9: ['Death Ward', 'Guardian of Faith']
+    },
+    'Light Domain': {
+        3: ['Burning Hands', 'Faerie Fire'],
+        5: ['Flaming Sphere', 'Scorching Ray'],
+        7: ['Daylight', 'Fireball'],
+        9: ['Guardian of Faith', 'Wall of Fire']
+    },
+    'Trickery Domain': {
+        3: ['Charm Person', 'Disguise Self'],
+        5: ['Mirror Image', 'Pass without Trace'],
+        7: ['Blink', 'Dispel Magic'],
+        9: ['Dimension Door', 'Polymorph']
+    },
+    'War Domain': {
+        3: ['Divine Favor', 'Shield of Faith'],
+        5: ['Magic Weapon', 'Spiritual Weapon'],
+        7: ['Crusader\'s Mantle', 'Spirit Guardians'],
+        9: ['Freedom of Movement', 'Stoneskin']
+    },
+
+    // Warlock Patron Spells
+    'Archfey Patron': {
+        3: ['Faerie Fire', 'Sleep'],
+        5: ['Calm Emotions', 'Phantasmal Force'],
+        7: ['Blink', 'Plant Growth'],
+        9: ['Dominate Beast', 'Greater Invisibility']
+    },
+    'Celestial Patron': {
+        3: ['Cure Wounds', 'Guiding Bolt'],
+        5: ['Flaming Sphere', 'Lesser Restoration'],
+        7: ['Daylight', 'Revivify'],
+        9: ['Guardian of Faith', 'Wall of Fire']
+    },
+    'Fiend Patron': {
+        3: ['Burning Hands', 'Command'],
+        5: ['Blindness/Deafness', 'Scorching Ray'],
+        7: ['Fireball', 'Stinking Cloud'],
+        9: ['Fire Shield', 'Wall of Fire']
+    },
+    'Great Old One Patron': {
+        3: ['Dissonant Whispers', 'Tasha\'s Hideous Laughter'],
+        5: ['Detect Thoughts', 'Phantasmal Force'],
+        7: ['Clairvoyance', 'Sending'],
+        9: ['Dominate Beast', 'Evard\'s Black Tentacles']
+    }
 };
 
 // Class saving throw proficiencies (D&D 2024)
@@ -3770,6 +3862,80 @@ function autoPopulateClassTraits() {
         return;
     }
 
+    // Add subclass-granted spells if applicable
+    const subclass = document.getElementById('charSubclass')?.value;
+    if (subclass && subclassSpellsByLevel[subclass]) {
+        if (!char.spells) char.spells = [];
+
+        const subclassSpells = subclassSpellsByLevel[subclass];
+        let spellsAdded = 0;
+
+        // Add spells for each level up to current level
+        for (let lvl = 1; lvl <= level; lvl++) {
+            if (subclassSpells[lvl]) {
+                subclassSpells[lvl].forEach(spellName => {
+                    // Check if character already has this spell
+                    const hasSpell = char.spells.some(s => s.name === spellName);
+                    if (!hasSpell) {
+                        // Find the spell in spellsData to get full details
+                        let spellDetails = null;
+                        let foundSpellLevel = null;
+                        for (const spellLevelKey in spellsData) {
+                            const found = spellsData[spellLevelKey].find(s => s.name === spellName);
+                            if (found) {
+                                spellDetails = found;
+                                foundSpellLevel = spellLevelKey;
+                                break;
+                            }
+                        }
+
+                        // Add spell with details or just basic info if not found
+                        if (spellDetails && foundSpellLevel) {
+                            // Format the spell level nicely
+                            let levelDisplay = 'Cantrip';
+                            if (foundSpellLevel !== 'cantrip') {
+                                const levelNum = foundSpellLevel.replace('level', '');
+                                const suffix = levelNum === '1' ? 'st' : levelNum === '2' ? 'nd' : levelNum === '3' ? 'rd' : 'th';
+                                levelDisplay = `${levelNum}${suffix} Level`;
+                            }
+
+                            char.spells.push({
+                                name: spellName,
+                                level: levelDisplay,
+                                school: spellDetails.school,
+                                castingTime: spellDetails.castingTime || '1 action',
+                                range: spellDetails.range || '30 feet',
+                                components: spellDetails.components || 'V, S',
+                                duration: spellDetails.duration || 'Instantaneous',
+                                desc: spellDetails.desc,
+                                source: `${subclass} (Level ${lvl})`,
+                                prepared: true
+                            });
+                        } else {
+                            char.spells.push({
+                                name: spellName,
+                                level: 'Unknown',
+                                school: 'Unknown',
+                                desc: `Granted by ${subclass} at level ${lvl}`,
+                                source: `${subclass} (Level ${lvl})`,
+                                prepared: true
+                            });
+                        }
+                        spellsAdded++;
+                    }
+                });
+            }
+        }
+
+        if (spellsAdded > 0) {
+            console.log(`Added ${spellsAdded} subclass spells from ${subclass}`);
+            // Re-render spells if the spell display is active
+            if (typeof renderSpells === 'function') {
+                renderSpells();
+            }
+        }
+    }
+
     // Update HP, proficiency, and counters
     updateCharacterStats();
     applyTraitEffectsToCharacterSheet();
@@ -4589,6 +4755,15 @@ function switchPlayerSection(section) {
                 btn.classList.add('active');
             }
         });
+
+        // Render content when switching to certain sections
+        if (section === 'spells') {
+            renderSelectedSpells();
+        } else if (section === 'feats') {
+            renderSelectedFeats();
+        } else if (section === 'counters') {
+            renderCounters();
+        }
     }
 }
 
@@ -6138,7 +6313,10 @@ async function renderCampaignCharacters() {
                                 <h5>Feats</h5>
                                 ${character.feats && character.feats.length > 0 ? `
                                     <ul class="char-detail-list">
-                                        ${character.feats.map(feat => `<li><strong>${feat.name}</strong>: ${feat.desc || ''}</li>`).join('')}
+                                        ${character.feats.map((feat, idx) => {
+                                            const featData = JSON.stringify(feat).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+                                            return `<li class="clickable-item" data-type="feat" data-info="${featData}" onclick="showFeatSpellModalFromData(this)"><strong>${feat.name}</strong></li>`;
+                                        }).join('')}
                                     </ul>
                                 ` : '<p class="no-data">No feats</p>'}
                             </div>
@@ -6148,7 +6326,28 @@ async function renderCampaignCharacters() {
                                 <h5>Spells</h5>
                                 ${character.spells && character.spells.length > 0 ? `
                                     <ul class="char-detail-list">
-                                        ${character.spells.map(spell => `<li><strong>${spell.name}</strong> (${spell.level || 'Cantrip'})</li>`).join('')}
+                                        ${character.spells
+                                            .slice()
+                                            .sort((a, b) => {
+                                                // Convert spell level to sortable number
+                                                const getLevelNum = (spell) => {
+                                                    if (!spell.level || spell.level.toLowerCase().includes('cantrip')) return 0;
+                                                    const match = spell.level.match(/[0-9]+/);
+                                                    return match ? parseInt(match[0]) : 0;
+                                                };
+                                                const levelA = getLevelNum(a);
+                                                const levelB = getLevelNum(b);
+
+                                                // Sort by level first
+                                                if (levelA !== levelB) return levelA - levelB;
+
+                                                // Then alphabetically by name
+                                                return (a.name || '').localeCompare(b.name || '');
+                                            })
+                                            .map((spell, idx) => {
+                                                const spellData = JSON.stringify(spell).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+                                                return '<li class="clickable-item" data-type="spell" data-info="' + spellData + '" onclick="showFeatSpellModalFromData(this)"><strong>' + spell.name + '</strong> (' + (spell.level || 'Cantrip') + ')</li>';
+                                            }).join('')}
                                     </ul>
                                 ` : '<p class="no-data">No spells</p>'}
                             </div>
@@ -6188,6 +6387,114 @@ async function renderCampaignCharacters() {
         container.innerHTML = '<p class="no-characters" style="color: var(--primary);">Error loading characters. Please try again.</p>';
     }
 }
+
+// Toggle character details expansion
+function toggleCharacterDetails(charId) {
+    const detailsSection = document.getElementById(`${charId}-details`);
+    const icon = document.getElementById(`${charId}-icon`);
+
+    if (detailsSection.style.display === 'none') {
+        detailsSection.style.display = 'block';
+        icon.textContent = '▲';
+    } else {
+        detailsSection.style.display = 'none';
+        icon.textContent = '▼';
+    }
+}
+
+// Show feat/spell modal from element data attributes
+function showFeatSpellModalFromData(element) {
+    const type = element.getAttribute('data-type');
+    const dataStr = element.getAttribute('data-info');
+
+    if (!dataStr) {
+        console.error('No data found for feat/spell');
+        return;
+    }
+
+    try {
+        const data = JSON.parse(dataStr);
+        showFeatSpellModal(type, data);
+    } catch (error) {
+        console.error('Error parsing feat/spell data:', error);
+    }
+}
+
+// Show feat/spell modal with details
+function showFeatSpellModal(type, data) {
+    const modal = document.getElementById('featSpellModal');
+    const title = document.getElementById('featSpellModalTitle');
+    const content = document.getElementById('featSpellModalContent');
+
+    if (type === 'feat') {
+        title.textContent = data.name;
+        content.innerHTML = `
+            <div style="margin-bottom: 15px;">
+                <strong style="color: var(--secondary);">Prerequisite:</strong>
+                <span>${data.prereq || 'None'}</span>
+            </div>
+            <div>
+                <strong style="color: var(--secondary);">Description:</strong>
+                <p style="margin-top: 8px; line-height: 1.8;">${data.desc || 'No description available'}</p>
+            </div>
+        `;
+    } else if (type === 'spell') {
+        title.textContent = data.name;
+        content.innerHTML = `
+            <div style="margin-bottom: 10px;">
+                <strong style="color: var(--secondary);">Level:</strong>
+                <span>${data.level || 'Cantrip'}</span>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <strong style="color: var(--secondary);">School:</strong>
+                <span>${data.school || 'N/A'}</span>
+            </div>
+            ${data.castingTime ? `
+                <div style="margin-bottom: 10px;">
+                    <strong style="color: var(--secondary);">Casting Time:</strong>
+                    <span>${data.castingTime}</span>
+                </div>
+            ` : ''}
+            ${data.range ? `
+                <div style="margin-bottom: 10px;">
+                    <strong style="color: var(--secondary);">Range:</strong>
+                    <span>${data.range}</span>
+                </div>
+            ` : ''}
+            ${data.components ? `
+                <div style="margin-bottom: 10px;">
+                    <strong style="color: var(--secondary);">Components:</strong>
+                    <span>${data.components}</span>
+                </div>
+            ` : ''}
+            ${data.duration ? `
+                <div style="margin-bottom: 10px;">
+                    <strong style="color: var(--secondary);">Duration:</strong>
+                    <span>${data.duration}</span>
+                </div>
+            ` : ''}
+            <div style="margin-top: 15px;">
+                <strong style="color: var(--secondary);">Description:</strong>
+                <p style="margin-top: 8px; line-height: 1.8;">${data.desc || 'No description available'}</p>
+            </div>
+        `;
+    }
+
+    modal.style.display = 'flex';
+}
+
+// Close feat/spell modal
+function closeFeatSpellModal() {
+    document.getElementById('featSpellModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('featSpellModal');
+    if (event.target === modal) {
+        closeFeatSpellModal();
+    }
+};
 
 // Initialize
 checkLogin();
