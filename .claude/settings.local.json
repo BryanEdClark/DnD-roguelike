@@ -32,7 +32,8 @@
       "Bash(npm test:*)",
       "Bash(ipconfig)",
       "Bash(set PORT=8347)",
-      "WebFetch(domain:docs.google.com)"
+      "WebFetch(domain:docs.google.com)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
