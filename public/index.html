@@ -119,6 +119,7 @@
         <div class="tabs">
             <button class="tab-button active" onclick="switchTab('dmtools')">DM Tools</button>
             <button class="tab-button" onclick="switchTab('playertools')">Player Tools</button>
+            <button class="tab-button" onclick="switchTab('combat')">Combat</button>
             <button class="tab-button" onclick="switchTab('diceroller')">Dice Roller</button>
             <button class="tab-button" onclick="switchTab('reference')">Reference</button>
         </div>
@@ -564,7 +565,7 @@
 
                     <!-- Spell Filters -->
                     <div class="spell-filters">
-                        <input type="text" id="spellSearch" placeholder="Search spells..." oninput="filterReferenceSpells()" />
+                        <input type="text" id="referenceSpellSearch" placeholder="Search spells..." oninput="filterReferenceSpells()" />
                         <select id="spellLevelFilter" onchange="filterReferenceSpells()">
                             <option value="all">All Levels</option>
                             <option value="cantrip">Cantrips</option>
@@ -613,15 +614,70 @@
             <div id="monstersSection" class="reference-section">
                 <div class="reference-container">
                     <h2>👹 Monsters</h2>
-                    <p class="reference-subtitle">Browse and search D&D monsters</p>
+                    <p class="reference-subtitle">Browse D&D monster images</p>
 
-                    <div class="monsters-redirect">
-                        <p style="color: var(--text); margin-bottom: 20px; text-align: center;">
-                            The full Monster Browser is available in the DM Tools section.
-                        </p>
-                        <button class="monster-browser-link" onclick="switchTab('dmtools'); switchSection('browser');">
-                            Open Monster Browser
-                        </button>
+                    <!-- Monster Filters -->
+                    <div class="spell-filters">
+                        <input type="text" id="referenceMonsterSearch" placeholder="Search monsters..." oninput="filterReferenceMonsters()" />
+                        <select id="monsterCRFilter" onchange="filterReferenceMonsters()">
+                            <option value="all">All CRs</option>
+                            <option value="0">CR 0</option>
+                            <option value="1/8">CR 1/8</option>
+                            <option value="1/4">CR 1/4</option>
+                            <option value="1/2">CR 1/2</option>
+                            <option value="1">CR 1</option>
+                            <option value="2">CR 2</option>
+                            <option value="3">CR 3</option>
+                            <option value="4">CR 4</option>
+                            <option value="5">CR 5</option>
+                            <option value="6">CR 6</option>
+                            <option value="7">CR 7</option>
+                            <option value="8">CR 8</option>
+                            <option value="9">CR 9</option>
+                            <option value="10">CR 10</option>
+                            <option value="11">CR 11</option>
+                            <option value="12">CR 12</option>
+                            <option value="13">CR 13</option>
+                            <option value="14">CR 14</option>
+                            <option value="15">CR 15</option>
+                            <option value="16">CR 16</option>
+                            <option value="17">CR 17</option>
+                            <option value="18">CR 18</option>
+                            <option value="19">CR 19</option>
+                            <option value="20">CR 20</option>
+                            <option value="21">CR 21</option>
+                            <option value="22">CR 22</option>
+                            <option value="23">CR 23</option>
+                            <option value="24">CR 24</option>
+                            <option value="25">CR 25</option>
+                            <option value="26">CR 26</option>
+                            <option value="27">CR 27</option>
+                            <option value="28">CR 28</option>
+                            <option value="29">CR 29</option>
+                            <option value="30">CR 30</option>
+                        </select>
+                        <select id="monsterTypeFilter" onchange="filterReferenceMonsters()">
+                            <option value="all">All Types</option>
+                            <option value="aberration">Aberration</option>
+                            <option value="beast">Beast</option>
+                            <option value="celestial">Celestial</option>
+                            <option value="construct">Construct</option>
+                            <option value="dragon">Dragon</option>
+                            <option value="elemental">Elemental</option>
+                            <option value="fey">Fey</option>
+                            <option value="fiend">Fiend</option>
+                            <option value="giant">Giant</option>
+                            <option value="humanoid">Humanoid</option>
+                            <option value="monstrosity">Monstrosity</option>
+                            <option value="ooze">Ooze</option>
+                            <option value="plant">Plant</option>
+                            <option value="undead">Undead</option>
+                        </select>
+                    </div>
+
+                    <!-- Monster Images Grid -->
+                    <div id="monsterImagesContent" class="monster-images-grid">
+                        <!-- Monster images will be rendered here -->
                     </div>
                 </div>
             </div>
@@ -694,6 +750,16 @@
                             </div>
                             <div class="difficulty-indicator" id="monsterCountIndicator">Auto</div>
                         </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="encounterTheme">
+                            Encounter Theme
+                            <span class="theme-hint">(Optional - filters monsters by environment/mood)</span>
+                        </label>
+                        <select id="encounterTheme">
+                            <option value="">No Theme (All Monsters)</option>
+                        </select>
                     </div>
 
                     <button class="generate-btn" onclick="generateEncounter()">Generate Encounter</button>
@@ -840,6 +906,7 @@
                 <button class="section-tab-button" onclick="switchPlayerSection('spells')">Spells</button>
                 <button class="section-tab-button" onclick="switchPlayerSection('feats')">Feats</button>
                 <button class="section-tab-button" onclick="switchPlayerSection('counters')">Counters</button>
+                <button class="section-tab-button" onclick="switchPlayerSection('monsters')">Monsters</button>
             </div>
 
             <div id="characterSection" class="player-section active">
@@ -889,7 +956,7 @@
                         </div>
                         <div class="input-group char-input-box">
                             <label>Species</label>
-                            <select id="charSpecies" onchange="updateSubspeciesOptions()">
+                            <select id="charSpecies" onchange="updateSubspeciesOptions(); updateAvatarPreview()">
                                 <option value="">Select species</option>
                                 <option value="Aasimar">Aasimar</option>
                                 <option value="Dragonborn">Dragonborn</option>
@@ -909,6 +976,37 @@
                             <select id="charSubspecies">
                                 <option value="">Select subspecies</option>
                             </select>
+                        </div>
+                        <div class="input-group char-input-box">
+                            <label>Gender</label>
+                            <select id="charGender" onchange="updateAvatarPreview()">
+                                <option value="">Select gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="char-header-row">
+                        <div class="avatar-selection">
+                            <label>Character Avatar</label>
+                            <div class="avatar-selection-container">
+                                <div class="avatar-preview-main">
+                                    <img id="avatarPreview" src="" alt="Character Avatar" style="display: none;" />
+                                    <div id="avatarPlaceholder">
+                                        Select species & gender to view avatars
+                                    </div>
+                                    <div class="avatar-upload-section">
+                                        <input type="file" id="avatarUpload" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)" />
+                                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('avatarUpload').click()">
+                                            📤 Upload Your Own
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="avatarGallery" class="avatar-gallery" style="display: none;">
+                                    <!-- Avatar options will be populated here -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1253,7 +1351,7 @@
                 </div>
             </div>
 
-            <div id="spellsSection" class="player-section">
+            <div id="playerSpellsSection" class="player-section">
                 <div class="spells-container">
                     <h2>✨ Spells</h2>
 
@@ -1363,6 +1461,78 @@
 
                     <div id="countersList" class="counters-list">
                         <p class="no-counters">No counters yet. Click "Add Counter" to create one.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monsters Section (Player Tools) -->
+            <div id="playerMonstersSection" class="player-section">
+                <div class="monsters-container">
+                    <h2>👹 Monsters</h2>
+                    <p class="reference-subtitle">Browse D&D monster images</p>
+
+                    <!-- Monster Filters -->
+                    <div class="spell-filters">
+                        <input type="text" id="playerMonsterSearch" placeholder="Search monsters..." oninput="filterPlayerMonsters()" />
+                        <select id="playerMonsterCRFilter" onchange="filterPlayerMonsters()">
+                            <option value="all">All CRs</option>
+                            <option value="0">CR 0</option>
+                            <option value="1/8">CR 1/8</option>
+                            <option value="1/4">CR 1/4</option>
+                            <option value="1/2">CR 1/2</option>
+                            <option value="1">CR 1</option>
+                            <option value="2">CR 2</option>
+                            <option value="3">CR 3</option>
+                            <option value="4">CR 4</option>
+                            <option value="5">CR 5</option>
+                            <option value="6">CR 6</option>
+                            <option value="7">CR 7</option>
+                            <option value="8">CR 8</option>
+                            <option value="9">CR 9</option>
+                            <option value="10">CR 10</option>
+                            <option value="11">CR 11</option>
+                            <option value="12">CR 12</option>
+                            <option value="13">CR 13</option>
+                            <option value="14">CR 14</option>
+                            <option value="15">CR 15</option>
+                            <option value="16">CR 16</option>
+                            <option value="17">CR 17</option>
+                            <option value="18">CR 18</option>
+                            <option value="19">CR 19</option>
+                            <option value="20">CR 20</option>
+                            <option value="21">CR 21</option>
+                            <option value="22">CR 22</option>
+                            <option value="23">CR 23</option>
+                            <option value="24">CR 24</option>
+                            <option value="25">CR 25</option>
+                            <option value="26">CR 26</option>
+                            <option value="27">CR 27</option>
+                            <option value="28">CR 28</option>
+                            <option value="29">CR 29</option>
+                            <option value="30">CR 30</option>
+                        </select>
+                        <select id="playerMonsterTypeFilter" onchange="filterPlayerMonsters()">
+                            <option value="all">All Types</option>
+                            <option value="aberration">Aberration</option>
+                            <option value="beast">Beast</option>
+                            <option value="celestial">Celestial</option>
+                            <option value="construct">Construct</option>
+                            <option value="dragon">Dragon</option>
+                            <option value="elemental">Elemental</option>
+                            <option value="fey">Fey</option>
+                            <option value="fiend">Fiend</option>
+                            <option value="giant">Giant</option>
+                            <option value="humanoid">Humanoid</option>
+                            <option value="monstrosity">Monstrosity</option>
+                            <option value="ooze">Ooze</option>
+                            <option value="plant">Plant</option>
+                            <option value="undead">Undead</option>
+                        </select>
+                    </div>
+
+                    <!-- Monster Images Grid -->
+                    <div id="playerMonsterImagesContent" class="monster-images-grid">
+                        <!-- Monster images will be rendered here -->
                     </div>
                 </div>
             </div>
@@ -1516,6 +1686,318 @@
                         <div id="generalFeatsTab" class="feat-tab-content active">
                             <div id="generalFeatsList" class="feats-list"></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Combat Section -->
+        <div id="combatTab" class="tab-content">
+            <div class="section-tabs">
+                <button class="section-tab-button active" onclick="switchCombatSection('map')">Map</button>
+            </div>
+
+            <!-- Map Section -->
+            <div id="mapSection" class="combat-section active">
+                <div class="combat-container">
+                    <h2>🗺️ Combat Map</h2>
+                    <p class="combat-subtitle">Tactical battle grid and positioning (100x100 grid)</p>
+
+                    <!-- Map Controls -->
+                    <div class="map-controls">
+                        <div class="map-control-group">
+                            <label>Zoom</label>
+                            <div class="zoom-controls">
+                                <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+                                <span id="zoomLevel" class="zoom-display">100%</span>
+                                <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                                <button class="zoom-btn reset-btn" onclick="resetZoom()" title="Reset View">Reset</button>
+                            </div>
+                        </div>
+
+                        <div class="map-control-group">
+                            <label>Grid Size</label>
+                            <select id="gridSizeSelect" onchange="updateGridSize()">
+                                <option value="30">Small (30px)</option>
+                                <option value="40" selected>Medium (40px)</option>
+                                <option value="50">Large (50px)</option>
+                                <option value="60">Extra Large (60px)</option>
+                            </select>
+                        </div>
+
+                        <div class="map-control-group">
+                            <label>Tool</label>
+                            <select id="mapToolSelect" onchange="updateMapTool()">
+                                <option value="pan">Pan/Move</option>
+                                <option value="tile">Place Tile</option>
+                                <option value="wall">Draw Walls</option>
+                            </select>
+                        </div>
+
+                        <div class="map-control-group" id="placeMultipleGroup" style="display: none;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="placeMultipleCheckbox" style="cursor: pointer;" />
+                                <span>Place Multiple</span>
+                            </label>
+                        </div>
+
+                        <div class="map-control-group" id="tileSizeGroup" style="display: none;">
+                            <label>Tile Size</label>
+                            <select id="tileSizeSelect" onchange="updateTileSizeOption()">
+                                <option value="1" selected>1x1</option>
+                                <option value="2">2x2</option>
+                                <option value="3">3x3</option>
+                                <option value="4">4x4</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+
+                        <div class="map-control-group" id="customTileSizeGroup" style="display: none;">
+                            <label>Custom Size</label>
+                            <input type="number" id="customTileSizeInput" min="1" max="20" value="5"
+                                   style="width: 70px; padding: 8px; background: var(--darker); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
+                        </div>
+
+                        <div class="map-control-group" id="tileColorGroup" style="display: none;">
+                            <label>Tile Color</label>
+                            <select id="tileColorSelect">
+                                <option value="player-character">🧙 My Character</option>
+                                <option value="#8b0000">Red (Enemy)</option>
+                                <option value="#006400">Green (Ally)</option>
+                                <option value="#00008b">Blue (Player)</option>
+                                <option value="#8b008b">Purple (NPC)</option>
+                                <option value="#8b4513">Brown (Object)</option>
+                                <option value="#808080">Gray (Terrain)</option>
+                            </select>
+                        </div>
+
+                        <div class="map-control-group">
+                            <label>Coordinates</label>
+                            <span id="currentCoords" class="coords-display">--</span>
+                        </div>
+
+                        <div class="map-control-group">
+                            <button class="zoom-btn delete-btn" onclick="clearAllTiles()" title="Clear All Tiles">Clear All</button>
+                            <button class="zoom-btn delete-btn" onclick="clearWalls()" title="Clear All Walls">Clear Walls</button>
+                        </div>
+
+                        <div class="map-control-group">
+                            <label>Multiplayer</label>
+                            <button class="zoom-btn" onclick="createMapSession()" title="Create Session">🌐 Create Session</button>
+                            <button class="zoom-btn" onclick="promptJoinSession()" title="Join Session">🔗 Join Session</button>
+                            <span id="sessionIdDisplay" style="display: none; color: var(--success); font-weight: bold; margin-top: 5px;"></span>
+                        </div>
+
+                        <div class="map-control-group">
+                            <button class="zoom-btn" onclick="toggleMapFullscreen()" title="Toggle Fullscreen">⛶ Fullscreen</button>
+                        </div>
+                    </div>
+
+                    <div class="map-canvas-wrapper" id="mapCanvasWrapper">
+                        <!-- Fullscreen Controls Menu -->
+                        <button id="fullscreenMenuToggle" class="fullscreen-menu-toggle" onclick="toggleFullscreenMenu()" style="display: none;">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </button>
+
+                        <!-- Fullscreen Actions Menu -->
+                        <button id="fullscreenActionsToggle" class="fullscreen-actions-toggle" onclick="toggleActionsMenu()" style="display: none;">
+                            <span>⚡</span>
+                        </button>
+
+                        <div id="fullscreenActionsPanel" class="fullscreen-actions-panel" style="display: none;">
+                            <div class="fullscreen-actions-header">
+                                <h3>Actions</h3>
+                                <button class="close-panel-btn" onclick="toggleActionsMenu()">×</button>
+                            </div>
+                            <div class="fullscreen-actions-content">
+                                <button class="action-btn" onclick="activateMoveMode()">
+                                    <span class="action-icon">↔</span>
+                                    <span class="action-label">Move</span>
+                                </button>
+                                <button class="action-btn" onclick="activateDashMode()">
+                                    <span class="action-icon">⚡</span>
+                                    <span class="action-label">Dash</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Fullscreen Notifications Menu -->
+                        <button id="fullscreenNotificationsToggle" class="fullscreen-notifications-toggle" onclick="toggleNotificationsMenu()" style="display: none;">
+                            <span>🔔</span>
+                            <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+                        </button>
+
+                        <div id="fullscreenNotificationsPanel" class="fullscreen-notifications-panel" style="display: none;">
+                            <div class="fullscreen-notifications-header">
+                                <h3>Notifications</h3>
+                                <button class="close-panel-btn" onclick="toggleNotificationsMenu()">×</button>
+                            </div>
+                            <div class="fullscreen-notifications-content" id="notificationsContent">
+                                <p style="color: var(--text-dim); text-align: center; padding: 20px;">No notifications</p>
+                            </div>
+                            <div class="fullscreen-notifications-footer">
+                                <button class="clear-notifications-btn" onclick="clearAllNotifications()">Clear All</button>
+                            </div>
+                        </div>
+
+                        <div id="fullscreenControlsPanel" class="fullscreen-controls-panel" style="display: none;">
+                            <div class="fullscreen-controls-header">
+                                <h3>Combat Map Controls</h3>
+                                <button class="close-panel-btn" onclick="toggleFullscreenMenu()">×</button>
+                            </div>
+                            <div class="fullscreen-controls-content">
+                                <!-- Copy of map controls for fullscreen -->
+                                <div class="fs-control-group">
+                                    <label>Tool</label>
+                                    <select id="fsMapToolSelect" onchange="updateMapToolFS()">
+                                        <option value="pan">Pan/Move</option>
+                                        <option value="tile">Place Tile</option>
+                                        <option value="wall">Draw Walls</option>
+                                    </select>
+                                </div>
+
+                                <div class="fs-control-group" id="fsPlaceMultipleGroup" style="display: none;">
+                                    <label style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="checkbox" id="fsPlaceMultipleCheckbox" />
+                                        <span>Place Multiple</span>
+                                    </label>
+                                </div>
+
+                                <div class="fs-control-group" id="fsTileSizeGroup" style="display: none;">
+                                    <label>Tile Size</label>
+                                    <select id="fsTileSizeSelect" onchange="updateTileSizeOptionFS()">
+                                        <option value="1" selected>1x1</option>
+                                        <option value="2">2x2</option>
+                                        <option value="3">3x3</option>
+                                        <option value="4">4x4</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+
+                                <div class="fs-control-group" id="fsCustomTileSizeGroup" style="display: none;">
+                                    <label>Custom Size</label>
+                                    <input type="number" id="fsCustomTileSizeInput" min="1" max="20" value="5" />
+                                </div>
+
+                                <div class="fs-control-group" id="fsTileColorGroup" style="display: none;">
+                                    <label>Tile Color</label>
+                                    <select id="fsTileColorSelect">
+                                        <option value="player-character">🧙 My Character</option>
+                                        <option value="#8b0000">Red (Enemy)</option>
+                                        <option value="#006400">Green (Ally)</option>
+                                        <option value="#00008b">Blue (Player)</option>
+                                        <option value="#8b008b">Purple (NPC)</option>
+                                        <option value="#8b4513">Brown (Object)</option>
+                                        <option value="#808080">Gray (Terrain)</option>
+                                    </select>
+                                </div>
+
+                                <div class="fs-control-group">
+                                    <label>Zoom</label>
+                                    <div class="zoom-controls">
+                                        <button class="zoom-btn" onclick="zoomOut()">-</button>
+                                        <span id="fsZoomLevel">100%</span>
+                                        <button class="zoom-btn" onclick="zoomIn()">+</button>
+                                        <button class="zoom-btn reset-btn" onclick="resetZoom()">Reset</button>
+                                    </div>
+                                </div>
+
+                                <div class="fs-control-group">
+                                    <label>Grid Size</label>
+                                    <select id="fsGridSizeSelect" onchange="updateGridSizeFS()">
+                                        <option value="30">Small (30px)</option>
+                                        <option value="40" selected>Medium (40px)</option>
+                                        <option value="50">Large (50px)</option>
+                                        <option value="60">XL (60px)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Tile Settings Section -->
+                                <div class="fs-section-divider"></div>
+                                <h4 class="fs-section-title">Tile Settings</h4>
+
+                                <div id="tileSettingsInfo" class="fs-control-group">
+                                    <div class="tile-settings-info">
+                                        <p id="selectedTileInfo" style="color: var(--secondary); font-style: italic;">
+                                            Click a tile to edit its properties
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div id="tileSettingsControls" style="display: none;">
+                                    <div class="fs-control-group">
+                                        <label>Name</label>
+                                        <input type="text" id="editTileName" placeholder="Enter tile name"
+                                               style="padding: 8px; background: var(--darker); color: var(--text); border: 1px solid var(--border); border-radius: 4px; width: 100%;" />
+                                    </div>
+
+                                    <div class="fs-control-group">
+                                        <label>Image (searchable)</label>
+                                        <input list="tileImageList" id="editTileImage" placeholder="Search monsters, avatars, or leave empty for color only"
+                                               style="padding: 8px; background: var(--darker); color: var(--text); border: 1px solid var(--border); border-radius: 4px; width: 100%;" />
+                                        <datalist id="tileImageList">
+                                            <!-- Options will be populated dynamically -->
+                                        </datalist>
+                                        <button class="zoom-btn" onclick="clearTileImage()" style="margin-top: 5px; padding: 6px 12px; font-size: 0.85rem;">Clear Image</button>
+                                    </div>
+
+                                    <div class="fs-control-group">
+                                        <label>Tile Size</label>
+                                        <select id="editTileSize">
+                                            <option value="1">1x1</option>
+                                            <option value="2">2x2</option>
+                                            <option value="3">3x3</option>
+                                            <option value="4">4x4</option>
+                                            <option value="5">5x5</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="fs-control-group">
+                                        <label>Speed (ft)</label>
+                                        <input type="number" id="editTileSpeed" min="0" max="999" value="30"
+                                               placeholder="Enter speed in feet" />
+                                    </div>
+
+                                    <div class="fs-control-group">
+                                        <button class="zoom-btn" onclick="saveTileSettings()">Save Changes</button>
+                                    </div>
+
+                                    <div class="fs-control-group">
+                                        <button class="zoom-btn delete-btn" onclick="deleteSelectedTile()">Delete This Tile</button>
+                                    </div>
+                                </div>
+
+                                <div class="fs-section-divider"></div>
+
+                                <div class="fs-control-group">
+                                    <button class="zoom-btn delete-btn" onclick="clearAllTiles()">Clear All Tiles</button>
+                                    <button class="zoom-btn delete-btn" onclick="clearWalls()">Clear Walls</button>
+                                </div>
+
+                                <div class="fs-control-group">
+                                    <button class="zoom-btn" onclick="toggleMapFullscreen()">Exit Fullscreen</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <canvas id="combatMapCanvas" width="1200" height="800"></canvas>
+                    </div>
+
+                    <div class="map-instructions">
+                        <p><strong>Controls:</strong></p>
+                        <ul>
+                            <li><strong>Pan Mode:</strong> Click and drag empty space to move around the map</li>
+                            <li><strong>Tile Mode:</strong> Click empty space to place tiles</li>
+                            <li><strong>Place Multiple:</strong> Check this box to stay in Tile Mode after placing tiles (otherwise automatically returns to Pan Mode)</li>
+                            <li><strong>Move Tiles:</strong> Click a tile to select it (gold border), then click a destination square to move it OR drag it to move</li>
+                            <li><strong>Name Tile:</strong> Double-click on a tile to set or edit its name</li>
+                            <li>Mouse wheel to zoom in/out</li>
+                            <li>Use +/- buttons or Reset to control zoom</li>
+                            <li>Hover to see grid coordinates</li>
+                            <li><strong>Delete Tile:</strong> Right-click on a tile or select it and press Delete key</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -1924,7 +2406,43 @@
         </div>
     </div>
 
+    <!-- Custom Alert Modal -->
+    <div id="customAlertModal" class="modal" style="display: none;">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2 id="customAlertTitle">Notice</h2>
+            </div>
+            <div class="modal-body">
+                <p id="customAlertMessage" style="color: var(--text); line-height: 1.6; margin: 20px 0; white-space: pre-wrap;"></p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn confirm-btn" onclick="closeCustomAlert()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Prompt Modal -->
+    <div id="customPromptModal" class="modal" style="display: none;">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2 id="customPromptTitle">Input</h2>
+                <button class="modal-close" onclick="closeCustomPrompt(false)">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="customPromptMessage" style="color: var(--text); line-height: 1.6; margin-bottom: 15px;"></p>
+                <div class="form-group">
+                    <input type="text" id="customPromptInput" style="width: 100%; padding: 8px; background: var(--bg-dark); color: var(--text); border: 1px solid var(--border); border-radius: 4px;" />
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel-btn" onclick="closeCustomPrompt(false)">Cancel</button>
+                <button class="modal-btn confirm-btn" onclick="closeCustomPrompt(true)">OK</button>
+            </div>
+        </div>
+    </div>
+
     <script src="spells-complete.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

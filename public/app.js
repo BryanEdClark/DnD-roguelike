@@ -2,6 +2,179 @@ let allMonsters = [];
 let filteredMonsters = [];
 let currentMonster = null;
 
+// Avatar configuration
+let avatarGalleryData = null;
+let selectedAvatarPath = null;
+
+const AVATAR_SPECIES_MAP = {
+    'Human': 'human',
+    'Elf': 'elf',
+    'Dwarf': 'dwarf',
+    'Halfling': 'halfling',
+    'Dragonborn': 'dragonborn',
+    'Gnome': 'gnome',
+    'Half-Elf': 'half-elf',
+    'Half-Orc': 'half-orc',
+    'Orc': 'half-orc',
+    'Tiefling': 'tiefling',
+    'Aasimar': 'aasimar',
+    'Goliath': 'goliath'
+};
+
+// Load avatar gallery data
+async function loadAvatarGallery() {
+    try {
+        const response = await fetch('/avatar-gallery.json');
+        avatarGalleryData = await response.json();
+    } catch (error) {
+        console.error('Failed to load avatar gallery:', error);
+    }
+}
+
+// Update avatar preview and gallery
+async function updateAvatarPreview() {
+    if (!avatarGalleryData) {
+        await loadAvatarGallery();
+    }
+
+    const species = document.getElementById('charSpecies').value;
+    const gender = document.getElementById('charGender').value;
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+    const avatarGallery = document.getElementById('avatarGallery');
+
+    if (!species || !gender || !avatarGalleryData) {
+        avatarPreview.style.display = 'none';
+        avatarPlaceholder.style.display = 'flex';
+        avatarGallery.style.display = 'none';
+        return;
+    }
+
+    const speciesKey = AVATAR_SPECIES_MAP[species];
+    const avatarOptions = avatarGalleryData[speciesKey]?.genders[gender];
+
+    if (!avatarOptions || avatarOptions.length === 0) {
+        avatarPreview.style.display = 'none';
+        avatarPlaceholder.style.display = 'flex';
+        avatarGallery.style.display = 'none';
+        return;
+    }
+
+    // Show gallery
+    avatarGallery.style.display = 'grid';
+    avatarGallery.innerHTML = '';
+
+    // Populate avatar options
+    avatarOptions.forEach(avatar => {
+        const option = document.createElement('div');
+        option.className = 'avatar-option';
+        if (selectedAvatarPath === avatar.path) {
+            option.classList.add('selected');
+        }
+
+        const img = document.createElement('img');
+        img.src = avatar.path;
+        img.alt = `${species} avatar`;
+
+        option.appendChild(img);
+        option.onclick = () => selectAvatar(avatar.path);
+
+        avatarGallery.appendChild(option);
+    });
+
+    // Update main preview if an avatar is selected
+    if (selectedAvatarPath) {
+        avatarPreview.src = selectedAvatarPath;
+        avatarPreview.style.display = 'block';
+        avatarPlaceholder.style.display = 'none';
+    } else {
+        // Auto-select first avatar
+        selectAvatar(avatarOptions[0].path);
+    }
+}
+
+// Select an avatar
+function selectAvatar(avatarPath) {
+    selectedAvatarPath = avatarPath;
+
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+
+    avatarPreview.src = avatarPath;
+    avatarPreview.style.display = 'block';
+    avatarPlaceholder.style.display = 'none';
+
+    // Update selected state in gallery
+    document.querySelectorAll('.avatar-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+
+    const selectedOption = Array.from(document.querySelectorAll('.avatar-option img'))
+        .find(img => img.src.includes(avatarPath.split('/').pop()));
+
+    if (selectedOption) {
+        selectedOption.parentElement.classList.add('selected');
+    }
+
+    // Auto-save character
+    if (characters.length > 0) {
+        saveCurrentCharacter();
+    }
+}
+
+// Handle avatar file upload
+async function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+        showAlert('File size must be less than 5MB');
+        return;
+    }
+
+    // Validate file type
+    if (!file.type.match(/image.*/)) {
+        showAlert('Please select an image file');
+        return;
+    }
+
+    try {
+        // Create form data
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        // Show uploading message
+        const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+        const originalText = avatarPlaceholder.textContent;
+        avatarPlaceholder.textContent = 'Uploading...';
+
+        // Upload to server
+        const response = await fetch('/api/upload-avatar', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Upload failed');
+        }
+
+        const data = await response.json();
+
+        // Update avatar
+        selectAvatar(data.avatarUrl);
+
+        // Reset file input
+        event.target.value = '';
+
+    } catch (error) {
+        console.error('Avatar upload error:', error);
+        showAlert('Failed to upload avatar. Please try again.');
+        const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+        avatarPlaceholder.textContent = 'Select species & gender to view avatars';
+    }
+}
+
 // Load monsters database and populate UI
 async function loadMonsters() {
     try {
@@ -23,12 +196,41 @@ async function loadMonsters() {
         // Populate CR filter
         populateCRFilter(data.monsters_by_cr);
 
+        // Load encounter themes
+        loadEncounterThemes();
+
         // Display monster list
         displayMonsterList();
     } catch (error) {
         console.error('Error loading monsters:', error);
         document.getElementById('monsterListContainer').innerHTML =
             '<div class="error">Failed to load monsters database</div>';
+    }
+}
+
+// Load and populate encounter themes
+async function loadEncounterThemes() {
+    try {
+        const response = await fetch('/api/encounter-themes');
+        const themes = await response.json();
+
+        const themeSelect = document.getElementById('encounterTheme');
+        if (!themeSelect) return;
+
+        // Clear existing options except the first one
+        themeSelect.innerHTML = '<option value="">No Theme (All Monsters)</option>';
+
+        // Add themes sorted alphabetically
+        Object.entries(themes)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .forEach(([themeName, themeData]) => {
+                const option = document.createElement('option');
+                option.value = themeName;
+                option.textContent = `${themeName} - ${themeData.description}`;
+                themeSelect.appendChild(option);
+            });
+    } catch (error) {
+        console.error('Error loading encounter themes:', error);
     }
 }
 
@@ -329,11 +531,15 @@ function switchTab(tab) {
     } else if (tab === 'playertools') {
         document.querySelectorAll('.tab-button')[1].classList.add('active');
         document.getElementById('playertoolsTab').classList.add('active');
-    } else if (tab === 'diceroller') {
+    } else if (tab === 'combat') {
         document.querySelectorAll('.tab-button')[2].classList.add('active');
+        document.getElementById('combatTab').classList.add('active');
+        switchCombatSection('map');
+    } else if (tab === 'diceroller') {
+        document.querySelectorAll('.tab-button')[3].classList.add('active');
         document.getElementById('dicerollerTab').classList.add('active');
     } else if (tab === 'reference') {
-        document.querySelectorAll('.tab-button')[3].classList.add('active');
+        document.querySelectorAll('.tab-button')[4].classList.add('active');
         document.getElementById('referenceTab').classList.add('active');
         switchReferenceSection('quickref');
     }
@@ -395,6 +601,24 @@ function switchReferenceSection(section) {
     } else if (section === 'monsters') {
         document.querySelectorAll('#referenceTab .section-tab-button')[6].classList.add('active');
         document.getElementById('monstersSection').classList.add('active');
+        if (referenceMonsters.length === 0) {
+            loadReferenceMonsters();
+        } else {
+            renderReferenceMonsters();
+        }
+    }
+}
+
+// Section switching within Combat
+function switchCombatSection(section) {
+    // Remove active class from all combat section tabs
+    document.querySelectorAll('#combatTab .section-tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.combat-section').forEach(content => content.classList.remove('active'));
+
+    // Add active class to selected section
+    if (section === 'map') {
+        document.querySelectorAll('#combatTab .section-tab-button')[0].classList.add('active');
+        document.getElementById('mapSection').classList.add('active');
     }
 }
 
@@ -1416,7 +1640,7 @@ function filterReferenceSpells() {
 }
 
 function renderReferenceSpells() {
-    const searchTerm = document.getElementById('spellSearch')?.value.toLowerCase() || '';
+    const searchTerm = document.getElementById('referenceSpellSearch')?.value.toLowerCase() || '';
     const levelFilter = document.getElementById('spellLevelFilter')?.value || 'all';
     const classFilter = document.getElementById('spellClassFilter')?.value || 'all';
     const schoolFilter = document.getElementById('spellSchoolFilter')?.value || 'all';
@@ -1511,6 +1735,174 @@ function renderReferenceSpells() {
     content.innerHTML = html;
 }
 
+// Monster Images for Reference Section
+let referenceMonsters = [];
+
+async function loadReferenceMonsters() {
+    try {
+        const response = await fetch('/api/monsters');
+        const data = await response.json();
+
+        // Flatten monsters by CR
+        referenceMonsters = [];
+        for (const cr in data.monsters_by_cr) {
+            data.monsters_by_cr[cr].forEach(monster => {
+                referenceMonsters.push({ ...monster, cr });
+            });
+        }
+
+        // Sort alphabetically
+        referenceMonsters.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Display monster images
+        renderReferenceMonsters();
+    } catch (error) {
+        console.error('Error loading reference monsters:', error);
+        const content = document.getElementById('monsterImagesContent');
+        if (content) {
+            content.innerHTML = '<div class="error">Failed to load monsters</div>';
+        }
+    }
+}
+
+function filterReferenceMonsters() {
+    renderReferenceMonsters();
+}
+
+function renderReferenceMonsters() {
+    const searchTerm = document.getElementById('referenceMonsterSearch')?.value.toLowerCase() || '';
+    const crFilter = document.getElementById('monsterCRFilter')?.value || 'all';
+    const typeFilter = document.getElementById('monsterTypeFilter')?.value || 'all';
+    const content = document.getElementById('monsterImagesContent');
+
+    if (!content) {
+        console.error('monsterImagesContent element not found');
+        return;
+    }
+
+    if (referenceMonsters.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: var(--text-dim); padding: 40px;">Loading monsters...</p>';
+        return;
+    }
+
+    // Filter monsters
+    let filteredMonsters = referenceMonsters.filter(monster => {
+        const matchesSearch = !searchTerm ||
+            monster.name.toLowerCase().includes(searchTerm) ||
+            monster.type.toLowerCase().includes(searchTerm);
+        const matchesCR = crFilter === 'all' || monster.cr === crFilter;
+        const matchesType = typeFilter === 'all' || monster.type.toLowerCase() === typeFilter.toLowerCase();
+
+        return matchesSearch && matchesCR && matchesType;
+    });
+
+    // Render monster images
+    let html = '';
+
+    if (filteredMonsters.length === 0) {
+        html = '<p style="text-align: center; color: var(--text-dim); padding: 40px;">No monsters found</p>';
+    } else {
+        html = '<div class="monster-images-wrapper">';
+        filteredMonsters.forEach(monster => {
+            if (monster.imageUrl) {
+                html += `
+                    <div class="monster-image-card">
+                        <img src="${monster.imageUrl}" alt="${monster.name}" onerror="this.parentElement.style.display='none'">
+                        <div class="monster-image-label">${monster.name}</div>
+                    </div>
+                `;
+            }
+        });
+        html += '</div>';
+    }
+
+    content.innerHTML = html;
+}
+
+// Player Tools Monster Images
+let playerMonsters = [];
+
+async function loadPlayerMonsters() {
+    try {
+        const response = await fetch('/api/monsters');
+        const data = await response.json();
+
+        // Flatten monsters by CR
+        playerMonsters = [];
+        for (const cr in data.monsters_by_cr) {
+            data.monsters_by_cr[cr].forEach(monster => {
+                playerMonsters.push({ ...monster, cr });
+            });
+        }
+
+        // Sort alphabetically
+        playerMonsters.sort((a, b) => a.name.localeCompare(b.name));
+
+        // Display monster images
+        renderPlayerMonsters();
+    } catch (error) {
+        console.error('Error loading player monsters:', error);
+        const content = document.getElementById('playerMonsterImagesContent');
+        if (content) {
+            content.innerHTML = '<div class="error">Failed to load monsters</div>';
+        }
+    }
+}
+
+function renderPlayerMonsters() {
+    const searchTerm = document.getElementById('playerMonsterSearch')?.value.toLowerCase() || '';
+    const crFilter = document.getElementById('playerMonsterCRFilter')?.value || 'all';
+    const typeFilter = document.getElementById('playerMonsterTypeFilter')?.value || 'all';
+    const content = document.getElementById('playerMonsterImagesContent');
+
+    if (!content) {
+        console.error('playerMonsterImagesContent element not found');
+        return;
+    }
+
+    if (playerMonsters.length === 0) {
+        content.innerHTML = '<p style="text-align: center; color: var(--text-dim); padding: 40px;">Loading monsters...</p>';
+        return;
+    }
+
+    // Filter monsters
+    let filteredMonsters = playerMonsters.filter(monster => {
+        const matchesSearch = !searchTerm ||
+            monster.name.toLowerCase().includes(searchTerm) ||
+            monster.type.toLowerCase().includes(searchTerm);
+        const matchesCR = crFilter === 'all' || monster.cr === crFilter;
+        const matchesType = typeFilter === 'all' || monster.type.toLowerCase() === typeFilter.toLowerCase();
+
+        return matchesSearch && matchesCR && matchesType;
+    });
+
+    // Render monster images
+    let html = '';
+
+    if (filteredMonsters.length === 0) {
+        html = '<p style="text-align: center; color: var(--text-dim); padding: 40px;">No monsters found</p>';
+    } else {
+        html = '<div class="monster-images-wrapper">';
+        filteredMonsters.forEach(monster => {
+            if (monster.imageUrl) {
+                html += `
+                    <div class="monster-image-card">
+                        <img src="${monster.imageUrl}" alt="${monster.name}" onerror="this.parentElement.style.display='none'">
+                        <div class="monster-image-label">${monster.name}</div>
+                    </div>
+                `;
+            }
+        });
+        html += '</div>';
+    }
+
+    content.innerHTML = html;
+}
+
+function filterPlayerMonsters() {
+    renderPlayerMonsters();
+}
+
 // Difficulty slider update
 const difficultySlider = document.getElementById('difficulty');
 const difficultyIndicator = document.getElementById('difficultyIndicator');
@@ -1576,6 +1968,7 @@ async function generateEncounter() {
     const difficultyValue = parseInt(document.getElementById('difficulty').value);
     const monsterCountValue = parseInt(document.getElementById('monsterCount').value);
     const monsterCountPref = monsterCountValue === 0 ? 'auto' : monsterCountValue.toString();
+    const selectedTheme = document.getElementById('encounterTheme')?.value || '';
 
     const difficultyMap = ['easy', 'medium', 'hard', 'veryhard', 'deadly'];
     const difficulty = difficultyMap[difficultyValue];
@@ -1603,15 +1996,40 @@ async function generateEncounter() {
         maxCR = partyLevel + 3;
     }
 
+    // Get theme tags if a theme is selected
+    let themeTags = [];
+    if (selectedTheme) {
+        try {
+            const response = await fetch('/api/encounter-themes');
+            const themes = await response.json();
+            const themeData = themes[selectedTheme];
+            if (themeData) {
+                themeTags = themeData.tags;
+            }
+        } catch (error) {
+            console.error('Error loading theme data:', error);
+        }
+    }
+
     // Get eligible monsters
-    const eligibleMonsters = allMonsters.filter(monster => {
+    let eligibleMonsters = allMonsters.filter(monster => {
         const cr = parseCR(monster.cr);
         return cr >= minCR && cr <= maxCR;
     });
 
+    // Filter by theme if selected
+    if (themeTags.length > 0) {
+        eligibleMonsters = eligibleMonsters.filter(monster => {
+            const monsterTags = monster.tags || [];
+            // Monster must have at least one matching tag
+            return themeTags.some(tag => monsterTags.includes(tag));
+        });
+    }
+
     if (eligibleMonsters.length === 0) {
+        const themeMsg = selectedTheme ? ` with theme "${selectedTheme}"` : '';
         document.getElementById('encounterResult').innerHTML =
-            '<div class="error">No monsters found in CR range ' + minCR + '-' + maxCR + '</div>';
+            '<div class="error">No monsters found in CR range ' + minCR + '-' + maxCR + themeMsg + '</div>';
         return;
     }
 
@@ -1624,7 +2042,8 @@ async function generateEncounter() {
         partySize,
         difficulty: difficultyNames[difficultyValue],
         xpBudget: totalXPBudget,
-        difficultyClass: difficultyClasses[difficultyValue]
+        difficultyClass: difficultyClasses[difficultyValue],
+        theme: selectedTheme
     });
 }
 
@@ -1759,10 +2178,11 @@ function displayEncounter(monsters, params) {
         winChance
     };
 
+    const themeTitle = params.theme ? ` <span class="theme-badge">${params.theme}</span>` : '';
     const html = `
         <div class="encounter-header">
             <div class="encounter-title">
-                ${params.difficulty} Encounter - Level ${params.partyLevel} Party (${params.partySize} players)
+                ${params.difficulty} Encounter - Level ${params.partyLevel} Party (${params.partySize} players)${themeTitle}
             </div>
             <div class="encounter-stats">
                 <div class="encounter-stat">
@@ -1866,80 +2286,75 @@ const subclasses = {
 const subclassSpellsByLevel = {
     // Sorcerer Subclasses
     'Draconic Sorcery': {
-        3: ['Chromatic Orb', 'Command'],
-        5: ['Dragon\'s Breath', 'Fear'],
-        7: ['Elemental Bane', 'Stoneskin'],
-        9: ['Dominate Person', 'Cone of Cold']
+        3: ['Alter Self', 'Chromatic Orb', 'Command', 'Dragon\'s Breath'],
+        5: ['Fear', 'Fly'],
+        7: ['Arcane Eye', 'Charm Monster'],
+        9: ['Legend Lore', 'Summon Dragon']
     },
     'Aberrant Sorcery': {
-        3: ['Arms of Hadar', 'Dissonant Whispers'],
-        5: ['Calm Emotions', 'Detect Thoughts'],
-        7: ['Hunger of Hadar', 'Sending'],
-        9: ['Evard\'s Black Tentacles', 'Summon Aberration']
+        3: ['Arms of Hadar', 'Calm Emotions', 'Detect Thoughts', 'Dissonant Whispers', 'Mind Sliver'],
+        5: ['Hunger of Hadar', 'Sending'],
+        7: ['Evard\'s Black Tentacles', 'Summon Aberration'],
+        9: ['Telepathic Bond', 'Telekinesis']
     },
     'Clockwork Sorcery': {
-        3: ['Aid', 'Alarm'],
-        5: ['Aid', 'Lesser Restoration'],
-        7: ['Dispel Magic', 'Protection from Energy'],
-        9: ['Freedom of Movement', 'Summon Construct']
+        3: ['Aid', 'Alarm', 'Lesser Restoration', 'Protection from Evil and Good'],
+        5: ['Dispel Magic', 'Protection from Energy'],
+        7: ['Freedom of Movement', 'Summon Construct'],
+        9: ['Greater Restoration', 'Wall of Force']
     },
-    'Wild Magic Sorcery': {
-        3: ['Chaos Bolt', 'Detect Magic'],
-        5: ['Blur', 'Phantasmal Force'],
-        7: ['Blink', 'Enemies Abound'],
-        9: ['Confusion', 'Polymorph']
-    },
+    // Wild Magic Sorcery does NOT get subclass spells in 2024 PHB
 
     // Cleric Domain Spells
     'Life Domain': {
-        3: ['Bless', 'Cure Wounds'],
-        5: ['Aid', 'Lesser Restoration'],
-        7: ['Beacon of Hope', 'Revivify'],
-        9: ['Death Ward', 'Guardian of Faith']
+        3: ['Aid', 'Bless', 'Cure Wounds', 'Lesser Restoration'],
+        5: ['Mass Healing Word', 'Revivify'],
+        7: ['Aura of Life', 'Death Ward'],
+        9: ['Greater Restoration', 'Mass Cure Wounds']
     },
     'Light Domain': {
-        3: ['Burning Hands', 'Faerie Fire'],
-        5: ['Flaming Sphere', 'Scorching Ray'],
-        7: ['Daylight', 'Fireball'],
-        9: ['Guardian of Faith', 'Wall of Fire']
+        3: ['Burning Hands', 'Faerie Fire', 'Scorching Ray', 'See Invisibility'],
+        5: ['Daylight', 'Fireball'],
+        7: ['Arcane Eye', 'Wall of Fire'],
+        9: ['Flame Strike', 'Scrying']
     },
     'Trickery Domain': {
-        3: ['Charm Person', 'Disguise Self'],
-        5: ['Mirror Image', 'Pass without Trace'],
-        7: ['Blink', 'Dispel Magic'],
-        9: ['Dimension Door', 'Polymorph']
+        3: ['Charm Person', 'Disguise Self', 'Invisibility', 'Pass without Trace'],
+        5: ['Hypnotic Pattern', 'Nondetection'],
+        7: ['Confusion', 'Dimension Door'],
+        9: ['Dominate Person', 'Modify Memory']
     },
     'War Domain': {
-        3: ['Divine Favor', 'Shield of Faith'],
-        5: ['Magic Weapon', 'Spiritual Weapon'],
-        7: ['Crusader\'s Mantle', 'Spirit Guardians'],
-        9: ['Freedom of Movement', 'Stoneskin']
+        3: ['Guiding Bolt', 'Magic Weapon', 'Shield of Faith', 'Spiritual Weapon'],
+        5: ['Crusader\'s Mantle', 'Spirit Guardians'],
+        7: ['Fire Shield', 'Freedom of Movement'],
+        9: ['Hold Monster', 'Steel Wind Strike']
     },
 
     // Warlock Patron Spells
     'Archfey Patron': {
-        3: ['Faerie Fire', 'Sleep'],
-        5: ['Calm Emotions', 'Phantasmal Force'],
-        7: ['Blink', 'Plant Growth'],
-        9: ['Dominate Beast', 'Greater Invisibility']
+        3: ['Calm Emotions', 'Faerie Fire', 'Misty Step', 'Phantasmal Force', 'Sleep'],
+        5: ['Blink', 'Plant Growth'],
+        7: ['Dominate Beast', 'Greater Invisibility'],
+        9: ['Dominate Person', 'Seeming']
     },
     'Celestial Patron': {
-        3: ['Cure Wounds', 'Guiding Bolt'],
-        5: ['Flaming Sphere', 'Lesser Restoration'],
-        7: ['Daylight', 'Revivify'],
-        9: ['Guardian of Faith', 'Wall of Fire']
+        3: ['Aid', 'Cure Wounds', 'Guiding Bolt', 'Lesser Restoration', 'Light', 'Sacred Flame'],
+        5: ['Daylight', 'Revivify'],
+        7: ['Guardian of Faith', 'Wall of Fire'],
+        9: ['Greater Restoration', 'Summon Celestial']
     },
     'Fiend Patron': {
-        3: ['Burning Hands', 'Command'],
-        5: ['Blindness/Deafness', 'Scorching Ray'],
-        7: ['Fireball', 'Stinking Cloud'],
-        9: ['Fire Shield', 'Wall of Fire']
+        3: ['Burning Hands', 'Command', 'Scorching Ray', 'Suggestion'],
+        5: ['Fireball', 'Stinking Cloud'],
+        7: ['Fire Shield', 'Wall of Fire'],
+        9: ['Geas', 'Insect Plague']
     },
     'Great Old One Patron': {
-        3: ['Dissonant Whispers', 'Tasha\'s Hideous Laughter'],
-        5: ['Detect Thoughts', 'Phantasmal Force'],
-        7: ['Clairvoyance', 'Sending'],
-        9: ['Dominate Beast', 'Evard\'s Black Tentacles']
+        3: ['Detect Thoughts', 'Dissonant Whispers', 'Phantasmal Force', 'Tasha\'s Hideous Laughter'],
+        5: ['Clairvoyance', 'Hunger of Hadar'],
+        7: ['Confusion', 'Summon Aberration'],
+        9: ['Modify Memory', 'Telekinesis']
     }
 };
 
@@ -2611,7 +3026,7 @@ function confirmAddArmor() {
     const notes = document.getElementById('armorNotes').value.trim();
 
     if (!name) {
-        alert('Please enter an armor name');
+        showAlert('Please enter an armor name');
         return;
     }
 
@@ -2656,7 +3071,7 @@ function confirmAddWeapon() {
     const notes = document.getElementById('weaponNotes').value.trim();
 
     if (!name) {
-        alert('Please enter a weapon name');
+        showAlert('Please enter a weapon name');
         return;
     }
 
@@ -2811,7 +3226,7 @@ function confirmAddInventory() {
     const notes = document.getElementById('inventoryNotes').value.trim();
 
     if (!name) {
-        alert('Please enter an item name');
+        showAlert('Please enter an item name');
         return;
     }
 
@@ -2913,7 +3328,7 @@ function saveDiceConfiguration() {
     // Check if any dice are set
     const hasAnyDice = Object.values(config).some(count => count > 0);
     if (!hasAnyDice) {
-        alert('Please set at least one die before saving');
+        showAlert('Please set at least one die before saving');
         return;
     }
 
@@ -2945,7 +3360,7 @@ function confirmSaveDiceConfig() {
     const name = document.getElementById('diceConfigName').value.trim();
 
     if (!name) {
-        alert('Please enter a name for the configuration');
+        showAlert('Please enter a name for the configuration');
         return;
     }
 
@@ -2982,7 +3397,7 @@ function deleteSavedDice() {
     const selectedId = parseInt(select.value);
 
     if (!selectedId) {
-        alert('Please select a configuration to delete');
+        showAlert('Please select a configuration to delete');
         return;
     }
 
@@ -3233,7 +3648,7 @@ function clearCustomEncounter() {
 
 function viewCustomEncounter() {
     if (customEncounterMonsters.length === 0) {
-        alert('Add at least one monster to the encounter builder first');
+        showAlert('Add at least one monster to the encounter builder first');
         return;
     }
 
@@ -3262,7 +3677,7 @@ function viewCustomEncounter() {
 
 function saveCustomEncounter() {
     if (customEncounterMonsters.length === 0) {
-        alert('Add at least one monster to the encounter builder first');
+        showAlert('Add at least one monster to the encounter builder first');
         return;
     }
 
@@ -3292,7 +3707,7 @@ let savedEncounters = [];
 
 function saveEncounterPrompt() {
     if (!currentEncounter) {
-        alert('No encounter to save');
+        showAlert('No encounter to save');
         return;
     }
 
@@ -3327,7 +3742,7 @@ async function confirmSaveEncounter() {
     const newFolder = document.getElementById('newFolderName').value.trim();
 
     if (!name) {
-        alert('Please enter an encounter name');
+        showAlert('Please enter an encounter name');
         return;
     }
 
@@ -3435,7 +3850,7 @@ function deleteSavedEncounter() {
     const encounterId = encounterSelect.value;
 
     if (!encounterId) {
-        alert('Please select an encounter to delete');
+        showAlert('Please select an encounter to delete');
         return;
     }
 
@@ -3760,7 +4175,7 @@ function confirmAddTrait() {
     const notes = document.getElementById('traitNotes').value.trim();
 
     if (!name) {
-        alert('Please enter a trait name');
+        showAlert('Please enter a trait name');
         return;
     }
 
@@ -3832,7 +4247,7 @@ function autoPopulateClassTraits() {
     const level = parseInt(document.getElementById('charLevel').value) || 1;
 
     if (!className) {
-        alert('Please select a class first');
+        showAlert('Please select a class first');
         return;
     }
 
@@ -3858,7 +4273,7 @@ function autoPopulateClassTraits() {
         }
         console.log(`Added ${char.traits.filter(t => t.type === 'class').length} class traits for ${className} level ${level}`);
     } else {
-        alert(`Class trait data not available for ${className}`);
+        showAlert(`Class trait data not available for ${className}`);
         return;
     }
 
@@ -3949,7 +4364,7 @@ function autoPopulateSpeciesTraits() {
     const species = document.getElementById('charSpecies').value;
 
     if (!species) {
-        alert('Please select a species first');
+        showAlert('Please select a species first');
         return;
     }
 
@@ -4416,7 +4831,7 @@ function setHPFromClass() {
     const conMod = Math.floor((conScore - 10) / 2);
 
     if (!className) {
-        alert('Please select a class first');
+        showAlert('Please select a class first');
         return;
     }
 
@@ -4722,6 +5137,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load saved encounters
     loadEncountersFromStorage();
+
+    // Load avatar gallery
+    loadAvatarGallery();
 });
 
 // Player Section switching
@@ -4738,9 +5156,10 @@ function switchPlayerSection(section) {
         'character': 'characterSection',
         'equipment': 'equipmentSection',
         'inventory': 'inventorySection',
-        'spells': 'spellsSection',
+        'spells': 'playerSpellsSection',
         'feats': 'featsSection',
-        'counters': 'countersSection'
+        'counters': 'countersSection',
+        'monsters': 'playerMonstersSection'
     };
 
     // Activate the section
@@ -4763,6 +5182,12 @@ function switchPlayerSection(section) {
             renderSelectedFeats();
         } else if (section === 'counters') {
             renderCounters();
+        } else if (section === 'monsters') {
+            if (playerMonsters.length === 0) {
+                loadPlayerMonsters();
+            } else {
+                renderPlayerMonsters();
+            }
         }
     }
 }
@@ -4795,12 +5220,12 @@ function confirmAddCounter() {
     const max = parseInt(document.getElementById('counterMax').value);
 
     if (!name) {
-        alert('Please enter a counter name');
+        showAlert('Please enter a counter name');
         return;
     }
 
     if (isNaN(max) || max < 1) {
-        alert('Please enter a valid maximum value (minimum 1)');
+        showAlert('Please enter a valid maximum value (minimum 1)');
         return;
     }
 
@@ -4839,7 +5264,7 @@ function autoPopulateCounters() {
     // Get the character whose counters we're updating
     const char = characters[currentCounterCharacterIndex];
     if (!char) {
-        alert('No character selected');
+        showAlert('No character selected');
         return;
     }
 
@@ -4867,7 +5292,7 @@ function autoPopulateCounters() {
     }
 
     if (!charClass) {
-        alert('Please select a class first');
+        showAlert('Please select a class first');
         return;
     }
 
@@ -5078,12 +5503,12 @@ function confirmEditCounter() {
     const max = parseInt(document.getElementById('editCounterMax').value);
 
     if (!name) {
-        alert('Please enter a counter name');
+        showAlert('Please enter a counter name');
         return;
     }
 
     if (isNaN(max) || max < 1) {
-        alert('Please enter a valid maximum value (minimum 1)');
+        showAlert('Please enter a valid maximum value (minimum 1)');
         return;
     }
 
@@ -5308,7 +5733,7 @@ async function attemptLogin() {
     const password = passwordInput.value.trim();
 
     if (!name) {
-        alert('Please enter an account name');
+        showAlert('Please enter an account name');
         return;
     }
 
@@ -5353,7 +5778,7 @@ async function createAccount() {
     const password = passwordInput.value.trim();
 
     if (!name) {
-        alert('Please enter an account name');
+        showAlert('Please enter an account name');
         return;
     }
 
@@ -5368,7 +5793,7 @@ async function createAccount() {
         updateUserDisplay();
         await loadUserData();
     } catch (error) {
-        alert(error.message);
+        showAlert(error.message);
     }
 }
 
@@ -5730,7 +6155,7 @@ function addNewCharacter() {
 // Delete current character
 function deleteCharacter() {
     if (characters.length <= 1) {
-        alert('You must have at least one character sheet.');
+        showAlert('You must have at least one character sheet.');
         return;
     }
 
@@ -5808,12 +6233,19 @@ function loadCurrentCharacter() {
     if (document.getElementById('charLevel')) document.getElementById('charLevel').value = char.level || 1;
     if (document.getElementById('charSpecies')) document.getElementById('charSpecies').value = char.species || '';
     if (document.getElementById('charBackground')) document.getElementById('charBackground').value = char.background || '';
+    if (document.getElementById('charGender')) document.getElementById('charGender').value = char.gender || '';
 
     updateSubclassOptions();
     if (document.getElementById('charSubclass')) document.getElementById('charSubclass').value = char.subclass || '';
 
     updateSubspeciesOptions();
     if (document.getElementById('charSubspecies')) document.getElementById('charSubspecies').value = char.subspecies || '';
+
+    // Load saved avatar
+    selectedAvatarPath = char.avatarUrl || null;
+
+    // Update avatar preview
+    updateAvatarPreview();
 
     if (document.getElementById('str')) document.getElementById('str').value = char.str || 10;
     if (document.getElementById('dex')) document.getElementById('dex').value = char.dex || 10;
@@ -5897,6 +6329,12 @@ function saveCurrentCharacter() {
     char.species = document.getElementById('charSpecies')?.value || '';
     char.subspecies = document.getElementById('charSubspecies')?.value || '';
     char.background = document.getElementById('charBackground')?.value || '';
+    char.gender = document.getElementById('charGender')?.value || '';
+
+    // Save selected avatar path
+    if (selectedAvatarPath) {
+        char.avatarUrl = selectedAvatarPath;
+    }
 
     char.str = document.getElementById('str')?.value || 10;
     char.dex = document.getElementById('dex')?.value || 10;
@@ -5977,7 +6415,7 @@ function confirmCreateCampaign() {
     const description = document.getElementById('newCampaignDescription').value.trim();
 
     if (!name) {
-        alert('Please enter a campaign name.');
+        showAlert('Please enter a campaign name.');
         return;
     }
 
@@ -6106,7 +6544,7 @@ function filterCharacterList() {
 // Delete campaign
 function deleteCampaign() {
     if (!currentCampaignId) {
-        alert('Please select a campaign to delete.');
+        showAlert('Please select a campaign to delete.');
         return;
     }
 
@@ -6125,7 +6563,7 @@ function deleteCampaign() {
 // Add character to campaign
 function addCharacterToCampaign() {
     if (!currentCampaignId) {
-        alert('Please select a campaign first.');
+        showAlert('Please select a campaign first.');
         return;
     }
 
@@ -6133,7 +6571,7 @@ function addCharacterToCampaign() {
     const selectedValue = select.value;
 
     if (!selectedValue) {
-        alert('Please select a character to add.');
+        showAlert('Please select a character to add.');
         return;
     }
 
@@ -6142,7 +6580,7 @@ function addCharacterToCampaign() {
     try {
         charData = JSON.parse(selectedValue);
     } catch (e) {
-        alert('Invalid character selection.');
+        showAlert('Invalid character selection.');
         return;
     }
 
@@ -6153,7 +6591,7 @@ function addCharacterToCampaign() {
     const exists = campaign.characters.some(c => c.username === username && c.charName === charName);
 
     if (exists) {
-        alert('This character is already in the campaign.');
+        showAlert('This character is already in the campaign.');
         return;
     }
 
@@ -6496,8 +6934,1676 @@ window.onclick = function(event) {
     }
 };
 
-// Initialize
-checkLogin();
-loadMonsters();
-initCharacterSheet();
-setupAutoSave();
+// ===== COMBAT MAP =====
+
+// Combat map state
+const combatMap = {
+    canvas: null,
+    ctx: null,
+    gridSize: 40, // Size of each grid square in pixels
+    gridCount: 100, // 100x100 grid
+    scale: 1.0, // Zoom level
+    offsetX: 0, // Pan offset X
+    offsetY: 0, // Pan offset Y
+    isDragging: false,
+    lastMouseX: 0,
+    lastMouseY: 0,
+    mouseDownX: 0, // Mouse position when mouse button was pressed
+    mouseDownY: 0,
+    hasMoved: false, // Whether mouse has moved since mouse down
+    minScale: 0.1,
+    maxScale: 3.0,
+    currentTool: 'pan', // 'pan', 'tile', or 'wall'
+    tiles: [], // Placed tiles
+    walls: new Set(), // Wall positions as "x,y" strings for fast lookup
+    selectedTile: null, // Currently selected tile (for click-to-move)
+    tileWasSelectedOnMouseDown: false, // Track if tile was already selected when mouse down occurred
+    moveRangeSquares: [], // Array of {gridX, gridY} for movement range overlay
+    nextTileId: 0,
+    imageCache: {}, // Cache for loaded images
+    isDrawingWall: false, // Track if currently drawing walls
+    socket: null, // Socket.IO connection
+    sessionId: null, // Current multiplayer session ID
+    isMultiplayer: false // Whether in multiplayer mode
+};
+
+// Populate tile image dropdowns with monsters and avatars
+async function populateTileImageDropdowns() {
+    try {
+        // Fetch monster list from API
+        const monsterResponse = await fetch('/api/monster-images');
+        const monsterData = await monsterResponse.json();
+        const monsters = monsterData.images.map(file => file.replace(/\.(png|jpg|jpeg)$/i, ''));
+
+        // Fetch avatar list from API
+        const avatarResponse = await fetch('/api/avatar-images');
+        const avatarData = await avatarResponse.json();
+        const avatars = avatarData.images.map(file => file.replace(/\.(png|jpg|jpeg)$/i, ''));
+
+        // Populate tile image datalist (for editing existing tiles)
+        const imageList = document.getElementById('tileImageList');
+
+        // Create options for image datalist
+        const createImageOptions = () => {
+            const options = [];
+
+            // Monster images
+            if (monsters.length > 0) {
+                monsters.sort().forEach(monster => {
+                    const displayName = '🐉 ' + monster.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    options.push(`<option value="monster:${monster}">${displayName}</option>`);
+                });
+            }
+
+            // Avatar images
+            if (avatars.length > 0) {
+                avatars.sort().forEach(avatar => {
+                    const displayName = '👤 ' + avatar.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    options.push(`<option value="avatar:${avatar}">${displayName}</option>`);
+                });
+            }
+
+            return options.join('');
+        };
+
+        const imageOptionsHTML = createImageOptions();
+        imageList.innerHTML = imageOptionsHTML;
+
+        console.log(`✅ Loaded ${monsters.length} monsters and ${avatars.length} avatars into tile image selector`);
+
+    } catch (error) {
+        console.error('Failed to load tile images:', error);
+    }
+}
+
+// Socket.IO multiplayer functions
+function initMultiplayerSocket() {
+    if (typeof io === 'undefined') {
+        console.warn('Socket.IO not loaded');
+        return;
+    }
+
+    combatMap.socket = io();
+
+    // Listen for updates from other users
+    combatMap.socket.on('tileAdded', (data) => {
+        combatMap.tiles.push(data.tile);
+        drawCombatMap();
+    });
+
+    combatMap.socket.on('tileRemoved', (data) => {
+        combatMap.tiles = combatMap.tiles.filter(t => t.id !== data.tileId);
+        if (combatMap.selectedTile && combatMap.selectedTile.id === data.tileId) {
+            combatMap.selectedTile = null;
+        }
+        drawCombatMap();
+    });
+
+    combatMap.socket.on('tileUpdated', (data) => {
+        const index = combatMap.tiles.findIndex(t => t.id === data.tile.id);
+        if (index !== -1) {
+            combatMap.tiles[index] = data.tile;
+        }
+        drawCombatMap();
+    });
+
+    combatMap.socket.on('wallAdded', (data) => {
+        combatMap.walls.add(data.wallKey);
+        drawCombatMap();
+    });
+
+    combatMap.socket.on('wallRemoved', (data) => {
+        combatMap.walls.delete(data.wallKey);
+        drawCombatMap();
+    });
+
+    combatMap.socket.on('wallsCleared', () => {
+        combatMap.walls.clear();
+        drawCombatMap();
+    });
+
+    combatMap.socket.on('tilesCleared', () => {
+        combatMap.tiles = [];
+        combatMap.selectedTile = null;
+        drawCombatMap();
+    });
+
+    combatMap.socket.on('userJoined', (data) => {
+        showNotification('👥 A player joined the map', 'info');
+    });
+
+    combatMap.socket.on('userLeft', (data) => {
+        showNotification('👥 A player left the map', 'info');
+    });
+}
+
+function createMapSession() {
+    if (!combatMap.socket) {
+        initMultiplayerSocket();
+    }
+
+    // Wait for socket to connect before emitting
+    if (!combatMap.socket.connected) {
+        combatMap.socket.once('connect', () => {
+            emitCreateSession();
+        });
+    } else {
+        emitCreateSession();
+    }
+}
+
+function emitCreateSession() {
+    combatMap.socket.emit('createSession', (response) => {
+        combatMap.sessionId = response.sessionId;
+        combatMap.isMultiplayer = true;
+
+        // Update UI to show session ID
+        const sessionDisplay = document.getElementById('sessionIdDisplay');
+        if (sessionDisplay) {
+            sessionDisplay.textContent = `Session: ${response.sessionId}`;
+            sessionDisplay.style.display = 'block';
+        }
+
+        // Show modal with session ID
+        showAlert(`Session created! Share this ID with others to join:\n\n${response.sessionId}`, 'Multiplayer Session Created');
+    });
+}
+
+function joinMapSession(sessionId) {
+    if (!combatMap.socket) {
+        initMultiplayerSocket();
+    }
+
+    // Wait for socket to connect before emitting
+    if (!combatMap.socket.connected) {
+        combatMap.socket.once('connect', () => {
+            emitJoinSession(sessionId);
+        });
+    } else {
+        emitJoinSession(sessionId);
+    }
+}
+
+function emitJoinSession(sessionId) {
+    combatMap.socket.emit('joinSession', sessionId, (response) => {
+        if (response.success) {
+            combatMap.sessionId = sessionId;
+            combatMap.isMultiplayer = true;
+
+            // Load existing tiles and walls from session
+            combatMap.tiles = response.tiles || [];
+            combatMap.walls = new Set(response.walls || []);
+
+            drawCombatMap();
+
+            // Update UI
+            const sessionDisplay = document.getElementById('sessionIdDisplay');
+            if (sessionDisplay) {
+                sessionDisplay.textContent = `Session: ${sessionId}`;
+                sessionDisplay.style.display = 'block';
+            }
+
+            showAlert(`Successfully joined session: ${sessionId}`, 'Connected to Session');
+        } else {
+            showAlert(`Failed to join session: ${response.error}`, 'Connection Error');
+        }
+    });
+}
+
+function leaveMapSession() {
+    if (combatMap.socket) {
+        combatMap.socket.disconnect();
+        combatMap.socket = null;
+    }
+    combatMap.sessionId = null;
+    combatMap.isMultiplayer = false;
+
+    const sessionDisplay = document.getElementById('sessionIdDisplay');
+    if (sessionDisplay) {
+        sessionDisplay.style.display = 'none';
+    }
+
+    showNotification('Left multiplayer session', 'info');
+}
+
+function promptJoinSession() {
+    showPrompt('Enter Session ID:', 'Join Multiplayer Session', (sessionId) => {
+        if (sessionId && sessionId.trim()) {
+            joinMapSession(sessionId.trim().toUpperCase());
+        }
+    });
+}
+
+// Custom prompt modal
+let promptCallback = null;
+
+function showPrompt(message, title = 'Input', callback) {
+    const modal = document.getElementById('customPromptModal');
+    const messageEl = document.getElementById('customPromptMessage');
+    const titleEl = document.getElementById('customPromptTitle');
+    const inputEl = document.getElementById('customPromptInput');
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    inputEl.value = '';
+    promptCallback = callback;
+
+    modal.style.display = 'flex';
+
+    // Focus the input field
+    setTimeout(() => inputEl.focus(), 100);
+
+    // Allow Enter key to submit
+    inputEl.onkeypress = function(e) {
+        if (e.key === 'Enter') {
+            closeCustomPrompt(true);
+        }
+    };
+}
+
+function closeCustomPrompt(confirmed) {
+    const modal = document.getElementById('customPromptModal');
+    const inputEl = document.getElementById('customPromptInput');
+
+    modal.style.display = 'none';
+
+    if (confirmed && promptCallback) {
+        promptCallback(inputEl.value);
+    }
+
+    promptCallback = null;
+    inputEl.onkeypress = null;
+}
+
+// Initialize combat map
+function initCombatMap() {
+    combatMap.canvas = document.getElementById('combatMapCanvas');
+    if (!combatMap.canvas) return;
+
+    combatMap.ctx = combatMap.canvas.getContext('2d');
+
+    // Set initial view to center of grid
+    resetZoom();
+
+    // Add event listeners
+    combatMap.canvas.addEventListener('mousedown', onMapMouseDown);
+    combatMap.canvas.addEventListener('mousemove', onMapMouseMove);
+    combatMap.canvas.addEventListener('mouseup', onMapMouseUp);
+    combatMap.canvas.addEventListener('mouseleave', onMapMouseLeave);
+    combatMap.canvas.addEventListener('wheel', onMapWheel, { passive: false });
+    combatMap.canvas.addEventListener('contextmenu', onMapRightClick);
+    combatMap.canvas.addEventListener('dblclick', onMapDoubleClick);
+
+    // Populate tile image dropdowns
+    populateTileImageDropdowns();
+
+    // Draw the map
+    drawCombatMap();
+}
+
+// Draw the combat map
+function drawCombatMap() {
+    const ctx = combatMap.ctx;
+    const canvas = combatMap.canvas;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Save context
+    ctx.save();
+
+    // Apply transformations
+    ctx.translate(combatMap.offsetX, combatMap.offsetY);
+    ctx.scale(combatMap.scale, combatMap.scale);
+
+    // Draw grid background
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(0, 0, combatMap.gridSize * combatMap.gridCount, combatMap.gridSize * combatMap.gridCount);
+
+    // Draw grid lines
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1 / combatMap.scale; // Keep line width constant regardless of zoom
+
+    // Vertical lines
+    for (let x = 0; x <= combatMap.gridCount; x++) {
+        ctx.beginPath();
+        ctx.moveTo(x * combatMap.gridSize, 0);
+        ctx.lineTo(x * combatMap.gridSize, combatMap.gridSize * combatMap.gridCount);
+        ctx.stroke();
+    }
+
+    // Horizontal lines
+    for (let y = 0; y <= combatMap.gridCount; y++) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * combatMap.gridSize);
+        ctx.lineTo(combatMap.gridSize * combatMap.gridCount, y * combatMap.gridSize);
+        ctx.stroke();
+    }
+
+    // Draw thicker lines every 5 squares
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 2 / combatMap.scale;
+
+    for (let x = 0; x <= combatMap.gridCount; x += 5) {
+        ctx.beginPath();
+        ctx.moveTo(x * combatMap.gridSize, 0);
+        ctx.lineTo(x * combatMap.gridSize, combatMap.gridSize * combatMap.gridCount);
+        ctx.stroke();
+    }
+
+    for (let y = 0; y <= combatMap.gridCount; y += 5) {
+        ctx.beginPath();
+        ctx.moveTo(0, y * combatMap.gridSize);
+        ctx.lineTo(combatMap.gridSize * combatMap.gridCount, y * combatMap.gridSize);
+        ctx.stroke();
+    }
+
+    // Draw coordinate labels every 10 squares
+    ctx.fillStyle = '#666';
+    ctx.font = `${12 / combatMap.scale}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let x = 0; x <= combatMap.gridCount; x += 10) {
+        ctx.fillText(x.toString(), x * combatMap.gridSize, -10 / combatMap.scale);
+    }
+
+    for (let y = 0; y <= combatMap.gridCount; y += 10) {
+        ctx.fillText(y.toString(), -10 / combatMap.scale, y * combatMap.gridSize);
+    }
+
+    // Draw movement range overlay
+    if (combatMap.moveRangeSquares.length > 0) {
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.3)'; // Transparent green
+        combatMap.moveRangeSquares.forEach(square => {
+            ctx.fillRect(
+                square.gridX * combatMap.gridSize,
+                square.gridY * combatMap.gridSize,
+                combatMap.gridSize,
+                combatMap.gridSize
+            );
+        });
+    }
+
+    // Draw walls
+    ctx.fillStyle = '#2a2a2a'; // Dark gray for walls
+    ctx.strokeStyle = '#000'; // Black border
+    ctx.lineWidth = 2 / combatMap.scale;
+    combatMap.walls.forEach(wallKey => {
+        const [x, y] = wallKey.split(',').map(Number);
+        ctx.fillRect(
+            x * combatMap.gridSize,
+            y * combatMap.gridSize,
+            combatMap.gridSize,
+            combatMap.gridSize
+        );
+        ctx.strokeRect(
+            x * combatMap.gridSize,
+            y * combatMap.gridSize,
+            combatMap.gridSize,
+            combatMap.gridSize
+        );
+    });
+
+    // Draw tiles
+    combatMap.tiles.forEach(tile => {
+        drawTile(tile, tile === combatMap.selectedTile);
+    });
+
+    // Restore context
+    ctx.restore();
+}
+
+// Draw a single tile
+function drawTile(tile, isSelected) {
+    const ctx = combatMap.ctx;
+    const x = tile.gridX * combatMap.gridSize;
+    const y = tile.gridY * combatMap.gridSize;
+    const size = tile.size * combatMap.gridSize;
+
+    // Draw tile background
+    ctx.fillStyle = tile.color;
+    ctx.globalAlpha = 0.7;
+    ctx.fillRect(x, y, size, size);
+    ctx.globalAlpha = 1.0;
+
+    // Draw avatar image if available
+    if (tile.avatarUrl) {
+        // Load image if not in cache
+        if (!combatMap.imageCache[tile.avatarUrl]) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                combatMap.imageCache[tile.avatarUrl] = img;
+                drawCombatMap(); // Redraw when image loads
+            };
+            img.onerror = () => {
+                console.error('Failed to load avatar:', tile.avatarUrl);
+                combatMap.imageCache[tile.avatarUrl] = 'failed';
+            };
+            img.src = tile.avatarUrl;
+        } else if (combatMap.imageCache[tile.avatarUrl] !== 'failed') {
+            // Draw the cached image
+            const img = combatMap.imageCache[tile.avatarUrl];
+            const padding = size * 0.1;
+            const imgSize = size - (padding * 2);
+            ctx.save();
+            ctx.globalAlpha = 1.0;
+            ctx.drawImage(img, x + padding, y + padding, imgSize, imgSize);
+            ctx.restore();
+        }
+    }
+
+    // Draw tile border
+    ctx.strokeStyle = isSelected ? '#FFD700' : '#fff';
+    ctx.lineWidth = (isSelected ? 3 : 2) / combatMap.scale;
+    ctx.strokeRect(x, y, size, size);
+
+    // Draw speed indicator in top-right corner
+    if (tile.speed !== undefined && tile.speed !== null) {
+        const speedText = `${tile.speed}ft`;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(x + size - (45 / combatMap.scale), y, 45 / combatMap.scale, 18 / combatMap.scale);
+        ctx.fillStyle = '#FFD700';
+        ctx.font = `bold ${11 / combatMap.scale}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(speedText, x + size - (22.5 / combatMap.scale), y + (9 / combatMap.scale));
+    }
+
+    // Draw name label at bottom if present
+    if (tile.name && tile.name.trim() !== '') {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x, y + size - (20 / combatMap.scale), size, 20 / combatMap.scale);
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${12 / combatMap.scale}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const maxWidth = size * 0.9;
+        ctx.fillText(tile.name, x + size / 2, y + size - (10 / combatMap.scale), maxWidth);
+    }
+    // Size text removed - tiles no longer display dimensions
+}
+
+// Map mouse down
+function onMapMouseDown(e) {
+    const rect = combatMap.canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Convert to grid coordinates
+    const gridX = Math.floor((mouseX - combatMap.offsetX) / (combatMap.gridSize * combatMap.scale));
+    const gridY = Math.floor((mouseY - combatMap.offsetY) / (combatMap.gridSize * combatMap.scale));
+
+    // Check what tile is being clicked BEFORE we change selection
+    const clickedTile = getTileAt(gridX, gridY);
+
+    // Track if this tile was already selected before this mouse down
+    combatMap.tileWasSelectedOnMouseDown = (clickedTile && clickedTile === combatMap.selectedTile);
+
+    // Record mouse down position
+    combatMap.mouseDownX = e.clientX;
+    combatMap.mouseDownY = e.clientY;
+    combatMap.lastMouseX = e.clientX;
+    combatMap.lastMouseY = e.clientY;
+    combatMap.hasMoved = false;
+
+    if (combatMap.currentTool === 'tile') {
+        if (clickedTile) {
+            // Don't select yet - let onMapMouseUp handle selection and distance calculation
+            combatMap.canvas.style.cursor = 'move';
+        } else if (!combatMap.selectedTile) {
+            // No tile selected and clicking empty space - place new tile
+            // Check if in fullscreen mode
+            const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+
+            const tileSizeSelect = isFullscreen ?
+                document.getElementById('fsTileSizeSelect').value :
+                document.getElementById('tileSizeSelect').value;
+            let tileSize;
+
+            if (tileSizeSelect === 'custom') {
+                const customInput = isFullscreen ?
+                    document.getElementById('fsCustomTileSizeInput') :
+                    document.getElementById('customTileSizeInput');
+                tileSize = parseInt(customInput.value);
+                // Validate custom size
+                if (isNaN(tileSize) || tileSize < 1 || tileSize > 20) {
+                    showAlert('Please enter a valid tile size between 1 and 20');
+                    return;
+                }
+            } else {
+                tileSize = parseInt(tileSizeSelect);
+            }
+
+            const tileColorValue = isFullscreen ?
+                document.getElementById('fsTileColorSelect').value :
+                document.getElementById('tileColorSelect').value;
+
+            // Check if tile fits on grid
+            if (gridX >= 0 && gridX + tileSize <= combatMap.gridCount &&
+                gridY >= 0 && gridY + tileSize <= combatMap.gridCount) {
+
+                const newTile = {
+                    id: combatMap.nextTileId++,
+                    gridX: gridX,
+                    gridY: gridY,
+                    size: tileSize,
+                    color: '#00008b', // Default color
+                    name: '',
+                    speed: 30 // Default speed in feet
+                };
+
+                // Handle player character option
+                if (tileColorValue === 'player-character') {
+                    if (characters.length > 0) {
+                        const currentChar = characters[currentCharacterIndex];
+                        if (currentChar.avatarUrl && currentChar.avatarUrl.trim() !== '') {
+                            newTile.avatarUrl = currentChar.avatarUrl;
+                            newTile.name = currentChar.name || 'Player';
+                            newTile.color = '#00008b'; // Blue background for player
+                        } else {
+                            showAlert('Please select an avatar for your character first.\nGo to Player Tools > Character Sheet and choose a species, gender, and avatar.');
+                            return;
+                        }
+                    } else {
+                        showAlert('Please create a character first to use their avatar.');
+                        return;
+                    }
+                } else {
+                    // Use the selected color
+                    newTile.color = tileColorValue;
+                }
+
+                combatMap.tiles.push(newTile);
+                combatMap.selectedTile = newTile;
+                drawCombatMap();
+
+                // Broadcast tile addition in multiplayer mode
+                if (combatMap.isMultiplayer && combatMap.socket) {
+                    combatMap.socket.emit('addTile', { tile: newTile });
+                }
+
+                // Check if Place Multiple is unchecked, then switch to pan mode
+                const placeMultipleCheckbox = isFullscreen ?
+                    document.getElementById('fsPlaceMultipleCheckbox') :
+                    document.getElementById('placeMultipleCheckbox');
+                const placeMultiple = placeMultipleCheckbox?.checked;
+                if (!placeMultiple) {
+                    // Sync both dropdowns
+                    document.getElementById('mapToolSelect').value = 'pan';
+                    document.getElementById('fsMapToolSelect').value = 'pan';
+                    updateMapTool();
+                }
+            } else {
+                showAlert(`Tile doesn't fit at position (${gridX}, ${gridY}). Please choose a different location or smaller size.`);
+            }
+        }
+        // else: tile selected and clicking empty space - will be handled in mouse up
+    } else if (combatMap.currentTool === 'wall') {
+        // Wall mode - place or remove walls
+        if (gridX >= 0 && gridX < combatMap.gridCount && gridY >= 0 && gridY < combatMap.gridCount) {
+            combatMap.isDrawingWall = true;
+            const wallKey = `${gridX},${gridY}`;
+
+            // Toggle wall - if it exists, remove it; if it doesn't, add it
+            // Right-click will remove walls (handled in onMapRightClick)
+            if (e.button === 0) { // Left click
+                combatMap.walls.add(wallKey);
+                drawCombatMap();
+
+                // Broadcast wall addition in multiplayer mode
+                if (combatMap.isMultiplayer && combatMap.socket) {
+                    combatMap.socket.emit('addWall', { wallKey });
+                }
+            }
+        }
+    } else {
+        // Pan mode - check if clicking on a tile first
+        if (clickedTile) {
+            // Don't select yet - let onMapMouseUp handle selection and distance calculation
+            combatMap.canvas.style.cursor = 'move';
+        } else if (!combatMap.selectedTile) {
+            // No tile selected - pan the map
+            combatMap.isDragging = true;
+            combatMap.canvas.style.cursor = 'grabbing';
+        }
+        // else: tile selected and clicking empty space - will be handled in mouse up
+    }
+}
+
+// Get tile at grid coordinates
+function getTileAt(gridX, gridY) {
+    // Check tiles in reverse order (top to bottom)
+    for (let i = combatMap.tiles.length - 1; i >= 0; i--) {
+        const tile = combatMap.tiles[i];
+        if (gridX >= tile.gridX && gridX < tile.gridX + tile.size &&
+            gridY >= tile.gridY && gridY < tile.gridY + tile.size) {
+            return tile;
+        }
+    }
+    return null;
+}
+
+// Map mouse move
+function onMapMouseMove(e) {
+    // Update coordinates display
+    const rect = combatMap.canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Convert to grid coordinates
+    const gridX = Math.floor((mouseX - combatMap.offsetX) / (combatMap.gridSize * combatMap.scale));
+    const gridY = Math.floor((mouseY - combatMap.offsetY) / (combatMap.gridSize * combatMap.scale));
+
+    if (gridX >= 0 && gridX < combatMap.gridCount && gridY >= 0 && gridY < combatMap.gridCount) {
+        document.getElementById('currentCoords').textContent = `${gridX}, ${gridY}`;
+    } else {
+        document.getElementById('currentCoords').textContent = '--';
+    }
+
+    // Check if mouse has moved enough to detect it's not a click
+    if (!combatMap.hasMoved && !combatMap.isDragging) {
+        const deltaX = e.clientX - combatMap.mouseDownX;
+        const deltaY = e.clientY - combatMap.mouseDownY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+        if (distance > 5) {
+            combatMap.hasMoved = true;
+            if (combatMap.isDragging) {
+                combatMap.canvas.style.cursor = 'grabbing';
+            }
+        }
+    }
+
+    // Handle map panning
+    if (combatMap.isDragging) {
+        const deltaX = e.clientX - combatMap.lastMouseX;
+        const deltaY = e.clientY - combatMap.lastMouseY;
+
+        combatMap.offsetX += deltaX;
+        combatMap.offsetY += deltaY;
+
+        combatMap.lastMouseX = e.clientX;
+        combatMap.lastMouseY = e.clientY;
+
+        drawCombatMap();
+    }
+    // Handle continuous wall drawing
+    else if (combatMap.isDrawingWall && combatMap.currentTool === 'wall') {
+        if (gridX >= 0 && gridX < combatMap.gridCount && gridY >= 0 && gridY < combatMap.gridCount) {
+            const wallKey = `${gridX},${gridY}`;
+            if (!combatMap.walls.has(wallKey)) { // Only emit if it's a new wall
+                combatMap.walls.add(wallKey);
+                drawCombatMap();
+
+                // Broadcast wall addition in multiplayer mode
+                if (combatMap.isMultiplayer && combatMap.socket) {
+                    combatMap.socket.emit('addWall', { wallKey });
+                }
+            }
+        }
+    }
+    // Update cursor when hovering over tiles
+    else if (combatMap.currentTool === 'tile') {
+        const hoveredTile = getTileAt(gridX, gridY);
+        combatMap.canvas.style.cursor = hoveredTile ? 'pointer' : 'crosshair';
+    } else if (combatMap.currentTool === 'wall') {
+        combatMap.canvas.style.cursor = 'cell';
+    } else if (combatMap.currentTool === 'pan') {
+        const hoveredTile = getTileAt(gridX, gridY);
+        combatMap.canvas.style.cursor = hoveredTile ? 'pointer' : 'move';
+    }
+}
+
+// Map mouse up
+function onMapMouseUp(e) {
+    // Handle click-to-move and selection (if didn't drag)
+    if (!combatMap.hasMoved) {
+        const rect = combatMap.canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        // Convert to grid coordinates
+        const gridX = Math.floor((mouseX - combatMap.offsetX) / (combatMap.gridSize * combatMap.scale));
+        const gridY = Math.floor((mouseY - combatMap.offsetY) / (combatMap.gridSize * combatMap.scale));
+
+        const clickedTile = getTileAt(gridX, gridY);
+
+        // If no tile was selected, and clicking on a tile, just select it
+        if (!combatMap.selectedTile && clickedTile) {
+            combatMap.selectedTile = clickedTile;
+            updateTileSettingsPanel();
+            drawCombatMap();
+        }
+        // If clicked the same tile that was already selected before mouse down, deselect it
+        else if (clickedTile === combatMap.selectedTile && combatMap.tileWasSelectedOnMouseDown) {
+            combatMap.selectedTile = null;
+            combatMap.moveRangeSquares = []; // Clear movement range
+            updateTileSettingsPanel();
+            drawCombatMap();
+        }
+        // If tile was selected and clicked empty space (not on a tile), move the selected tile there
+        else if (combatMap.selectedTile && !clickedTile && gridX >= 0 && gridY >= 0) {
+            const tileSize = combatMap.selectedTile.size;
+
+            // Check if tile fits at new position
+            if (gridX + tileSize <= combatMap.gridCount && gridY + tileSize <= combatMap.gridCount) {
+                combatMap.selectedTile.gridX = gridX;
+                combatMap.selectedTile.gridY = gridY;
+
+                // Broadcast tile update in multiplayer mode
+                if (combatMap.isMultiplayer && combatMap.socket) {
+                    combatMap.socket.emit('updateTile', { tile: combatMap.selectedTile });
+                }
+
+                combatMap.selectedTile = null; // Deselect after moving
+                combatMap.moveRangeSquares = []; // Clear movement range
+                updateTileSettingsPanel();
+                drawCombatMap();
+            }
+        }
+        // If tile was selected and clicked a different tile, calculate distance and then select it
+        else if (combatMap.selectedTile && clickedTile && clickedTile !== combatMap.selectedTile) {
+            // Calculate distance between selected tile and clicked tile
+            const distance = calculateTileDistance(combatMap.selectedTile, clickedTile);
+            showAlert(`Distance: ${distance} squares (${distance * 5} feet)`, 'Distance', false);
+
+            combatMap.selectedTile = clickedTile;
+            combatMap.moveRangeSquares = []; // Clear movement range when switching tiles
+            updateTileSettingsPanel();
+            drawCombatMap();
+        }
+    }
+
+    combatMap.isDragging = false;
+    combatMap.isDrawingWall = false;
+    combatMap.hasMoved = false;
+    combatMap.tileWasSelectedOnMouseDown = false;
+
+    if (combatMap.currentTool === 'pan') {
+        combatMap.canvas.style.cursor = 'move';
+    } else if (combatMap.currentTool === 'wall') {
+        combatMap.canvas.style.cursor = 'cell';
+    } else {
+        combatMap.canvas.style.cursor = 'crosshair';
+    }
+}
+
+// Map mouse leave
+function onMapMouseLeave(e) {
+    combatMap.isDragging = false;
+    combatMap.isDrawingWall = false;
+    combatMap.hasMoved = false;
+    // Keep tile selected when mouse leaves canvas so user can edit in menu
+
+    if (combatMap.currentTool === 'pan') {
+        combatMap.canvas.style.cursor = 'move';
+    } else {
+        combatMap.canvas.style.cursor = 'crosshair';
+    }
+
+    document.getElementById('currentCoords').textContent = '--';
+}
+
+// Handle right-click to delete tiles
+function onMapRightClick(e) {
+    e.preventDefault();
+
+    const rect = combatMap.canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Convert to grid coordinates
+    const gridX = Math.floor((mouseX - combatMap.offsetX) / (combatMap.gridSize * combatMap.scale));
+    const gridY = Math.floor((mouseY - combatMap.offsetY) / (combatMap.gridSize * combatMap.scale));
+
+    // Handle wall removal in wall mode
+    if (combatMap.currentTool === 'wall') {
+        const wallKey = `${gridX},${gridY}`;
+        if (combatMap.walls.has(wallKey)) {
+            combatMap.walls.delete(wallKey);
+            drawCombatMap();
+
+            // Broadcast wall removal in multiplayer mode
+            if (combatMap.isMultiplayer && combatMap.socket) {
+                combatMap.socket.emit('removeWall', { wallKey });
+            }
+        }
+        return false;
+    }
+
+    // Check if right-clicking on a tile
+    const clickedTile = getTileAt(gridX, gridY);
+
+    if (clickedTile) {
+        // Remove the tile
+        const index = combatMap.tiles.indexOf(clickedTile);
+        if (index > -1) {
+            const tileId = clickedTile.id;
+            combatMap.tiles.splice(index, 1);
+
+            // Deselect if this was the selected tile
+            if (combatMap.selectedTile === clickedTile) {
+                combatMap.selectedTile = null;
+            }
+
+            drawCombatMap();
+
+            // Broadcast tile removal in multiplayer mode
+            if (combatMap.isMultiplayer && combatMap.socket) {
+                combatMap.socket.emit('removeTile', { tileId });
+            }
+        }
+    }
+
+    return false;
+}
+
+// Handle double-click to name tiles
+function onMapDoubleClick(e) {
+    const rect = combatMap.canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Convert to grid coordinates
+    const gridX = Math.floor((mouseX - combatMap.offsetX) / (combatMap.gridSize * combatMap.scale));
+    const gridY = Math.floor((mouseY - combatMap.offsetY) / (combatMap.gridSize * combatMap.scale));
+
+    // Check if double-clicking on a tile - select it for editing
+    const clickedTile = getTileAt(gridX, gridY);
+
+    if (clickedTile) {
+        // Select tile and open settings panel
+        combatMap.selectedTile = clickedTile;
+        updateTileSettingsPanel();
+        drawCombatMap();
+
+        // Open the fullscreen controls panel if in fullscreen mode
+        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+        if (isFullscreen) {
+            const panel = document.getElementById('fullscreenControlsPanel');
+            const toggle = document.getElementById('fullscreenMenuToggle');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                toggle.classList.add('active');
+            }
+        }
+    }
+}
+
+// Handle keyboard for deleting tiles
+window.addEventListener('keydown', (e) => {
+    if ((e.key === 'Delete' || e.key === 'Backspace') && combatMap.selectedTile) {
+        // Remove the selected tile
+        const index = combatMap.tiles.indexOf(combatMap.selectedTile);
+        if (index > -1) {
+            combatMap.tiles.splice(index, 1);
+            combatMap.selectedTile = null;
+            updateTileSettingsPanel();
+            drawCombatMap();
+        }
+    }
+});
+
+// Map mouse wheel (zoom)
+function onMapWheel(e) {
+    e.preventDefault();
+
+    const rect = combatMap.canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Calculate mouse position in world coordinates before zoom
+    const worldX = (mouseX - combatMap.offsetX) / combatMap.scale;
+    const worldY = (mouseY - combatMap.offsetY) / combatMap.scale;
+
+    // Adjust scale
+    const zoomIntensity = 0.1;
+    const delta = e.deltaY > 0 ? -zoomIntensity : zoomIntensity;
+    const newScale = Math.max(combatMap.minScale, Math.min(combatMap.maxScale, combatMap.scale + delta));
+
+    // Calculate new offset to keep mouse position fixed
+    combatMap.offsetX = mouseX - worldX * newScale;
+    combatMap.offsetY = mouseY - worldY * newScale;
+    combatMap.scale = newScale;
+
+    // Update zoom display
+    updateZoomDisplay();
+
+    drawCombatMap();
+}
+
+// Zoom in
+function zoomIn() {
+    const centerX = combatMap.canvas.width / 2;
+    const centerY = combatMap.canvas.height / 2;
+
+    const worldX = (centerX - combatMap.offsetX) / combatMap.scale;
+    const worldY = (centerY - combatMap.offsetY) / combatMap.scale;
+
+    combatMap.scale = Math.min(combatMap.maxScale, combatMap.scale + 0.2);
+
+    combatMap.offsetX = centerX - worldX * combatMap.scale;
+    combatMap.offsetY = centerY - worldY * combatMap.scale;
+
+    updateZoomDisplay();
+    drawCombatMap();
+}
+
+// Zoom out
+function zoomOut() {
+    const centerX = combatMap.canvas.width / 2;
+    const centerY = combatMap.canvas.height / 2;
+
+    const worldX = (centerX - combatMap.offsetX) / combatMap.scale;
+    const worldY = (centerY - combatMap.offsetY) / combatMap.scale;
+
+    combatMap.scale = Math.max(combatMap.minScale, combatMap.scale - 0.2);
+
+    combatMap.offsetX = centerX - worldX * combatMap.scale;
+    combatMap.offsetY = centerY - worldY * combatMap.scale;
+
+    updateZoomDisplay();
+    drawCombatMap();
+}
+
+// Reset zoom
+function resetZoom() {
+    // Center the grid in the canvas
+    const totalGridWidth = combatMap.gridSize * combatMap.gridCount;
+    const totalGridHeight = combatMap.gridSize * combatMap.gridCount;
+
+    // Calculate scale to fit the grid in the canvas with some padding
+    const scaleX = (combatMap.canvas.width * 0.9) / totalGridWidth;
+    const scaleY = (combatMap.canvas.height * 0.9) / totalGridHeight;
+    combatMap.scale = Math.min(scaleX, scaleY);
+
+    // Center the grid
+    combatMap.offsetX = (combatMap.canvas.width - totalGridWidth * combatMap.scale) / 2;
+    combatMap.offsetY = (combatMap.canvas.height - totalGridHeight * combatMap.scale) / 2;
+
+    updateZoomDisplay();
+    drawCombatMap();
+}
+
+// Update zoom display
+function updateZoomDisplay() {
+    const zoomPercent = Math.round(combatMap.scale * 100);
+    document.getElementById('zoomLevel').textContent = `${zoomPercent}%`;
+
+    // Also update fullscreen zoom display if it exists
+    const fsZoomLevel = document.getElementById('fsZoomLevel');
+    if (fsZoomLevel) {
+        fsZoomLevel.textContent = `${zoomPercent}%`;
+    }
+}
+
+// Update grid size
+function updateGridSize() {
+    const select = document.getElementById('gridSizeSelect');
+    combatMap.gridSize = parseInt(select.value);
+    resetZoom();
+}
+
+// Update map tool
+function updateMapTool() {
+    const select = document.getElementById('mapToolSelect');
+    combatMap.currentTool = select.value;
+
+    // Show/hide tile options
+    const tileSizeGroup = document.getElementById('tileSizeGroup');
+    const tileColorGroup = document.getElementById('tileColorGroup');
+    const customTileSizeGroup = document.getElementById('customTileSizeGroup');
+    const placeMultipleGroup = document.getElementById('placeMultipleGroup');
+
+    if (combatMap.currentTool === 'tile') {
+        tileSizeGroup.style.display = 'flex';
+        tileColorGroup.style.display = 'flex';
+        placeMultipleGroup.style.display = 'flex';
+        combatMap.canvas.style.cursor = 'crosshair';
+
+        // Check if custom is selected
+        updateTileSizeOption();
+    } else if (combatMap.currentTool === 'wall') {
+        tileSizeGroup.style.display = 'none';
+        tileColorGroup.style.display = 'none';
+        customTileSizeGroup.style.display = 'none';
+        placeMultipleGroup.style.display = 'none';
+        combatMap.canvas.style.cursor = 'cell';
+    } else {
+        tileSizeGroup.style.display = 'none';
+        tileColorGroup.style.display = 'none';
+        customTileSizeGroup.style.display = 'none';
+        placeMultipleGroup.style.display = 'none';
+        combatMap.canvas.style.cursor = 'move';
+    }
+
+    // Deselect any selected tile
+    combatMap.selectedTile = null;
+    drawCombatMap();
+}
+
+// Clear all walls
+function clearWalls() {
+    if (combatMap.walls.size > 0) {
+        if (confirm(`Clear all ${combatMap.walls.size} walls?`)) {
+            combatMap.walls.clear();
+            drawCombatMap();
+
+            // Broadcast clear walls in multiplayer mode
+            if (combatMap.isMultiplayer && combatMap.socket) {
+                combatMap.socket.emit('clearWalls');
+            }
+        }
+    } else {
+        showAlert('No walls to clear');
+    }
+}
+
+// Update tile size option (show/hide custom input)
+function updateTileSizeOption() {
+    const tileSizeSelect = document.getElementById('tileSizeSelect');
+    const customTileSizeGroup = document.getElementById('customTileSizeGroup');
+
+    if (tileSizeSelect.value === 'custom') {
+        customTileSizeGroup.style.display = 'flex';
+    } else {
+        customTileSizeGroup.style.display = 'none';
+    }
+}
+
+// Clear all tiles
+function clearAllTiles() {
+    if (combatMap.tiles.length === 0) return;
+
+    if (confirm('Are you sure you want to clear all tiles from the map?')) {
+        combatMap.tiles = [];
+        combatMap.selectedTile = null;
+
+        // Broadcast clear tiles in multiplayer mode
+        if (combatMap.isMultiplayer && combatMap.socket) {
+            combatMap.socket.emit('clearTiles');
+        }
+        combatMap.nextTileId = 0;
+        drawCombatMap();
+    }
+}
+
+// Toggle fullscreen mode for combat map
+function toggleMapFullscreen() {
+    const wrapper = document.getElementById('mapCanvasWrapper');
+
+    if (!document.fullscreenElement) {
+        // Enter fullscreen
+        if (wrapper.requestFullscreen) {
+            wrapper.requestFullscreen();
+        } else if (wrapper.webkitRequestFullscreen) {
+            wrapper.webkitRequestFullscreen();
+        } else if (wrapper.msRequestFullscreen) {
+            wrapper.msRequestFullscreen();
+        }
+    } else {
+        // Exit fullscreen
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    }
+}
+
+// Handle fullscreen changes
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+function handleFullscreenChange() {
+    const wrapper = document.getElementById('mapCanvasWrapper');
+    const canvas = document.getElementById('combatMapCanvas');
+    const menuToggle = document.getElementById('fullscreenMenuToggle');
+    const controlsPanel = document.getElementById('fullscreenControlsPanel');
+    const actionsToggle = document.getElementById('fullscreenActionsToggle');
+    const actionsPanel = document.getElementById('fullscreenActionsPanel');
+    const notificationsToggle = document.getElementById('fullscreenNotificationsToggle');
+    const notificationsPanel = document.getElementById('fullscreenNotificationsPanel');
+
+    if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+        // In fullscreen - resize canvas to fill screen
+        canvas.width = window.screen.width;
+        canvas.height = window.screen.height;
+        wrapper.classList.add('fullscreen-active');
+
+        // Show hamburger menu, actions button, and notifications button, hide panels initially
+        menuToggle.style.display = 'flex';
+        controlsPanel.style.display = 'none';
+        actionsToggle.style.display = 'flex';
+        actionsPanel.style.display = 'none';
+        notificationsToggle.style.display = 'flex';
+        notificationsPanel.style.display = 'none';
+
+        // Sync fullscreen controls with main controls
+        syncFullscreenControls();
+    } else {
+        // Exited fullscreen - restore original size
+        canvas.width = 1200;
+        canvas.height = 800;
+        wrapper.classList.remove('fullscreen-active');
+
+        // Hide fullscreen menu elements
+        menuToggle.style.display = 'none';
+        controlsPanel.style.display = 'none';
+        actionsToggle.style.display = 'none';
+        actionsPanel.style.display = 'none';
+        notificationsToggle.style.display = 'none';
+        notificationsPanel.style.display = 'none';
+    }
+
+    // Redraw the map with new size
+    drawCombatMap();
+}
+
+// Toggle fullscreen controls menu
+function toggleFullscreenMenu() {
+    const panel = document.getElementById('fullscreenControlsPanel');
+    const toggle = document.getElementById('fullscreenMenuToggle');
+
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        toggle.classList.add('active');
+        syncFullscreenControls(); // Sync when opening
+    } else {
+        panel.style.display = 'none';
+        toggle.classList.remove('active');
+    }
+}
+
+// Toggle actions menu
+function toggleActionsMenu() {
+    const panel = document.getElementById('fullscreenActionsPanel');
+    const toggle = document.getElementById('fullscreenActionsToggle');
+
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        toggle.classList.add('active');
+    } else {
+        panel.style.display = 'none';
+        toggle.classList.remove('active');
+    }
+}
+
+// Notifications system
+const notifications = [];
+
+function toggleNotificationsMenu() {
+    const panel = document.getElementById('fullscreenNotificationsPanel');
+    const toggle = document.getElementById('fullscreenNotificationsToggle');
+
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        toggle.classList.add('active');
+        // Mark all as read when opening
+        updateNotificationBadge();
+    } else {
+        panel.style.display = 'none';
+        toggle.classList.remove('active');
+    }
+}
+
+function addNotification(message, title = 'Notice') {
+    const notification = {
+        message,
+        title,
+        timestamp: new Date(),
+        id: Date.now()
+    };
+
+    notifications.unshift(notification); // Add to beginning
+
+    // Keep only last 50 notifications
+    if (notifications.length > 50) {
+        notifications.pop();
+    }
+
+    updateNotificationsPanel();
+    updateNotificationBadge();
+}
+
+function updateNotificationsPanel() {
+    const content = document.getElementById('notificationsContent');
+
+    if (notifications.length === 0) {
+        content.innerHTML = '<p style="color: var(--text-dim); text-align: center; padding: 20px;">No notifications</p>';
+        return;
+    }
+
+    content.innerHTML = notifications.map(notif => {
+        const time = notif.timestamp.toLocaleTimeString();
+        return `
+            <div class="notification-item">
+                <div style="font-weight: bold; color: #6bb6ff; margin-bottom: 5px;">${notif.title}</div>
+                <div>${notif.message}</div>
+                <div class="notification-time">${time}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateNotificationBadge() {
+    const badge = document.getElementById('notificationBadge');
+    const panel = document.getElementById('fullscreenNotificationsPanel');
+
+    // Only show badge if there are notifications and panel is closed
+    if (notifications.length > 0 && panel.style.display === 'none') {
+        badge.textContent = notifications.length;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function clearAllNotifications() {
+    notifications.length = 0; // Clear array
+    updateNotificationsPanel();
+    updateNotificationBadge();
+}
+
+// Calculate distance between two tiles (in squares)
+function calculateTileDistance(tile1, tile2) {
+    // Calculate center positions of each tile
+    const center1X = tile1.gridX + (tile1.size / 2);
+    const center1Y = tile1.gridY + (tile1.size / 2);
+    const center2X = tile2.gridX + (tile2.size / 2);
+    const center2Y = tile2.gridY + (tile2.size / 2);
+
+    // Calculate horizontal and vertical distance
+    const dx = Math.abs(center2X - center1X);
+    const dy = Math.abs(center2Y - center1Y);
+
+    // Use D&D 5e distance rules: diagonals count as 1 square
+    // For every diagonal move, you move 1 square horizontally and 1 square vertically
+    const diagonals = Math.min(dx, dy);
+    const straight = Math.max(dx, dy) - diagonals;
+
+    return Math.round(diagonals + straight);
+}
+
+// Calculate movement range for a tile
+function calculateMoveRange(tile, speedMultiplier = 1) {
+    const baseSpeed = tile.speed || 30; // Speed in feet
+    const moveSpeed = baseSpeed * speedMultiplier; // Apply multiplier (1x for Move, 2x for Dash)
+    const maxSquares = Math.floor(moveSpeed / 5); // Each square = 5 feet
+    const reachableSquares = [];
+
+    // Use BFS to find all reachable squares
+    const queue = [];
+    const visited = new Set();
+
+    // Add starting position for each square of the tile
+    for (let dy = 0; dy < tile.size; dy++) {
+        for (let dx = 0; dx < tile.size; dx++) {
+            const startX = tile.gridX + dx;
+            const startY = tile.gridY + dy;
+            const key = `${startX},${startY}`;
+            queue.push({ x: startX, y: startY, distance: 0 });
+            visited.add(key);
+        }
+    }
+
+    // 8 directions (including diagonals)
+    const directions = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+    ];
+
+    while (queue.length > 0) {
+        const current = queue.shift();
+
+        // Check all 8 directions
+        for (const [dx, dy] of directions) {
+            const newX = current.x + dx;
+            const newY = current.y + dy;
+            const newDistance = current.distance + 1;
+            const key = `${newX},${newY}`;
+
+            // Check bounds
+            if (newX < 0 || newX >= combatMap.gridCount ||
+                newY < 0 || newY >= combatMap.gridCount) {
+                continue;
+            }
+
+            // Check if already visited
+            if (visited.has(key)) {
+                continue;
+            }
+
+            // Check if within movement range
+            if (newDistance > maxSquares) {
+                continue;
+            }
+
+            // Check if blocked by a wall
+            if (combatMap.walls.has(key)) {
+                continue;
+            }
+
+            // Check if blocked by another tile (not the selected tile)
+            const blockingTile = getTileAt(newX, newY);
+            if (blockingTile && blockingTile !== tile) {
+                continue;
+            }
+
+            visited.add(key);
+            queue.push({ x: newX, y: newY, distance: newDistance });
+
+            // Check if this position can fit the tile
+            let canFit = true;
+            for (let ty = 0; ty < tile.size; ty++) {
+                for (let tx = 0; tx < tile.size; tx++) {
+                    const checkX = newX + tx;
+                    const checkY = newY + ty;
+
+                    // Check bounds
+                    if (checkX >= combatMap.gridCount || checkY >= combatMap.gridCount) {
+                        canFit = false;
+                        break;
+                    }
+
+                    // Check for walls
+                    const wallKey = `${checkX},${checkY}`;
+                    if (combatMap.walls.has(wallKey)) {
+                        canFit = false;
+                        break;
+                    }
+
+                    // Check for blocking tiles
+                    const blocking = getTileAt(checkX, checkY);
+                    if (blocking && blocking !== tile) {
+                        canFit = false;
+                        break;
+                    }
+                }
+                if (!canFit) break;
+            }
+
+            if (canFit) {
+                reachableSquares.push({ gridX: newX, gridY: newY });
+            }
+        }
+    }
+
+    return reachableSquares;
+}
+
+// Activate move mode
+function activateMoveMode() {
+    if (!combatMap.selectedTile) {
+        showAlert('Please select a tile first by clicking on it.');
+        toggleActionsMenu(); // Close the menu
+        return;
+    }
+
+    // Close the actions menu
+    toggleActionsMenu();
+
+    // Calculate and display movement range (1x speed)
+    combatMap.moveRangeSquares = calculateMoveRange(combatMap.selectedTile, 1);
+    drawCombatMap();
+}
+
+// Activate dash mode (double movement)
+function activateDashMode() {
+    if (!combatMap.selectedTile) {
+        showAlert('Please select a tile first by clicking on it.');
+        toggleActionsMenu(); // Close the menu
+        return;
+    }
+
+    // Close the actions menu
+    toggleActionsMenu();
+
+    // Calculate and display movement range (2x speed for dash)
+    combatMap.moveRangeSquares = calculateMoveRange(combatMap.selectedTile, 2);
+    drawCombatMap();
+}
+
+// Sync fullscreen controls with main controls
+function syncFullscreenControls() {
+    const mainTool = document.getElementById('mapToolSelect').value;
+    const fsTool = document.getElementById('fsMapToolSelect');
+    fsTool.value = mainTool;
+
+    const mainTileSize = document.getElementById('tileSizeSelect').value;
+    const fsTileSize = document.getElementById('fsTileSizeSelect');
+    fsTileSize.value = mainTileSize;
+
+    const mainTileColor = document.getElementById('tileColorSelect').value;
+    const fsTileColor = document.getElementById('fsTileColorSelect');
+    fsTileColor.value = mainTileColor;
+
+    const mainGridSize = document.getElementById('gridSizeSelect').value;
+    const fsGridSize = document.getElementById('fsGridSizeSelect');
+    fsGridSize.value = mainGridSize;
+
+    const mainPlaceMultiple = document.getElementById('placeMultipleCheckbox').checked;
+    const fsPlaceMultiple = document.getElementById('fsPlaceMultipleCheckbox');
+    fsPlaceMultiple.checked = mainPlaceMultiple;
+
+    const mainCustomSize = document.getElementById('customTileSizeInput').value;
+    const fsCustomSize = document.getElementById('fsCustomTileSizeInput');
+    fsCustomSize.value = mainCustomSize;
+
+    // Sync zoom level display
+    const mainZoom = document.getElementById('zoomLevel').textContent;
+    const fsZoom = document.getElementById('fsZoomLevel');
+    fsZoom.textContent = mainZoom;
+
+    // Update visibility of fullscreen controls
+    updateMapToolFS();
+}
+
+// Fullscreen versions of control update functions
+function updateMapToolFS() {
+    const select = document.getElementById('fsMapToolSelect');
+    const mainSelect = document.getElementById('mapToolSelect');
+    mainSelect.value = select.value;
+
+    combatMap.currentTool = select.value;
+
+    const tileSizeGroup = document.getElementById('fsTileSizeGroup');
+    const tileColorGroup = document.getElementById('fsTileColorGroup');
+    const customTileSizeGroup = document.getElementById('fsCustomTileSizeGroup');
+    const placeMultipleGroup = document.getElementById('fsPlaceMultipleGroup');
+
+    if (combatMap.currentTool === 'tile') {
+        tileSizeGroup.style.display = 'block';
+        tileColorGroup.style.display = 'block';
+        placeMultipleGroup.style.display = 'block';
+        combatMap.canvas.style.cursor = 'crosshair';
+        updateTileSizeOptionFS();
+    } else if (combatMap.currentTool === 'wall') {
+        tileSizeGroup.style.display = 'none';
+        tileColorGroup.style.display = 'none';
+        customTileSizeGroup.style.display = 'none';
+        placeMultipleGroup.style.display = 'none';
+        combatMap.canvas.style.cursor = 'cell';
+    } else {
+        tileSizeGroup.style.display = 'none';
+        tileColorGroup.style.display = 'none';
+        customTileSizeGroup.style.display = 'none';
+        placeMultipleGroup.style.display = 'none';
+        combatMap.canvas.style.cursor = 'move';
+    }
+
+    combatMap.selectedTile = null;
+    drawCombatMap();
+}
+
+function updateTileSizeOptionFS() {
+    const select = document.getElementById('fsTileSizeSelect');
+    const mainSelect = document.getElementById('tileSizeSelect');
+    mainSelect.value = select.value;
+
+    const customGroup = document.getElementById('fsCustomTileSizeGroup');
+    const mainCustomGroup = document.getElementById('customTileSizeGroup');
+
+    if (select.value === 'custom') {
+        customGroup.style.display = 'block';
+        mainCustomGroup.style.display = 'flex';
+    } else {
+        customGroup.style.display = 'none';
+        mainCustomGroup.style.display = 'none';
+    }
+}
+
+function updateGridSizeFS() {
+    const select = document.getElementById('fsGridSizeSelect');
+    const mainSelect = document.getElementById('gridSizeSelect');
+    mainSelect.value = select.value;
+    combatMap.gridSize = parseInt(select.value);
+    resetZoom();
+}
+
+// Tile Settings Functions
+function updateTileSettingsPanel() {
+    const info = document.getElementById('selectedTileInfo');
+    const controls = document.getElementById('tileSettingsControls');
+    const nameInput = document.getElementById('editTileName');
+    const imageInput = document.getElementById('editTileImage');
+    const sizeSelect = document.getElementById('editTileSize');
+    const speedInput = document.getElementById('editTileSpeed');
+
+    if (combatMap.selectedTile) {
+        info.innerHTML = `Selected: <strong>${combatMap.selectedTile.name || 'Unnamed Tile'}</strong> (${combatMap.selectedTile.size}x${combatMap.selectedTile.size})`;
+        controls.style.display = 'block';
+        nameInput.value = combatMap.selectedTile.name || '';
+
+        // Show the current image selection
+        let imageValue = '';
+        if (combatMap.selectedTile.avatarUrl) {
+            if (combatMap.selectedTile.avatarUrl.includes('/monsters/')) {
+                const monsterName = combatMap.selectedTile.avatarUrl.split('/').pop().replace('.png', '');
+                imageValue = `monster:${monsterName}`;
+            } else if (combatMap.selectedTile.avatarUrl.includes('/avatars/')) {
+                const avatarName = combatMap.selectedTile.avatarUrl.split('/').pop().replace('.jpg', '');
+                imageValue = `avatar:${avatarName}`;
+            }
+        }
+        imageInput.value = imageValue;
+
+        sizeSelect.value = combatMap.selectedTile.size;
+        speedInput.value = combatMap.selectedTile.speed || 30;
+    } else {
+        info.textContent = 'Click a tile to edit its properties';
+        controls.style.display = 'none';
+    }
+}
+
+function saveTileSettings() {
+    if (!combatMap.selectedTile) return;
+
+    const newName = document.getElementById('editTileName').value.trim();
+    const newImage = document.getElementById('editTileImage').value.trim();
+    const newSize = parseInt(document.getElementById('editTileSize').value);
+    const newSpeed = parseInt(document.getElementById('editTileSpeed').value);
+    const tile = combatMap.selectedTile;
+
+    // Check if new size fits on grid
+    if (tile.gridX + newSize <= combatMap.gridCount && tile.gridY + newSize <= combatMap.gridCount) {
+        tile.name = newName;
+        tile.size = newSize;
+        tile.speed = isNaN(newSpeed) ? 30 : newSpeed;
+
+        // Handle image
+        if (newImage) {
+            if (newImage.startsWith('monster:')) {
+                const monsterName = newImage.replace('monster:', '');
+                tile.avatarUrl = `/images/monsters/${monsterName}.png`;
+                if (!tile.name) {
+                    tile.name = monsterName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                }
+            } else if (newImage.startsWith('avatar:')) {
+                const avatarName = newImage.replace('avatar:', '');
+                tile.avatarUrl = `/images/avatars/${avatarName}.jpg`;
+                if (!tile.name) {
+                    tile.name = avatarName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                }
+            }
+        } else {
+            // Clear image if empty
+            delete tile.avatarUrl;
+        }
+
+        // Broadcast tile update in multiplayer mode
+        if (combatMap.isMultiplayer && combatMap.socket) {
+            combatMap.socket.emit('updateTile', { tile });
+        }
+
+        combatMap.selectedTile = null; // Deselect after saving
+        updateTileSettingsPanel();
+        drawCombatMap();
+    } else {
+        showAlert(`Cannot resize: ${newSize}x${newSize} tile doesn't fit at current position (${tile.gridX}, ${tile.gridY})`);
+        document.getElementById('editTileSize').value = tile.size;
+    }
+}
+
+function clearTileImage() {
+    const imageInput = document.getElementById('editTileImage');
+    imageInput.value = '';
+}
+
+// Legacy functions kept for compatibility
+function updateSelectedTileSize() {
+    saveTileSettings();
+}
+
+function updateSelectedTileSpeed() {
+    saveTileSettings();
+}
+
+function deleteSelectedTile() {
+    if (!combatMap.selectedTile) return;
+
+    const index = combatMap.tiles.indexOf(combatMap.selectedTile);
+    if (index > -1) {
+        combatMap.tiles.splice(index, 1);
+        combatMap.selectedTile = null;
+        updateTileSettingsPanel();
+        drawCombatMap();
+    }
+}
+
+// Custom Alert Modal Functions
+function showAlert(message, title = 'Notice', showModal = true) {
+    // Always add to notifications
+    addNotification(message, title);
+
+    // Optionally show modal (for critical errors)
+    if (showModal) {
+        const modal = document.getElementById('customAlertModal');
+        const messageEl = document.getElementById('customAlertMessage');
+        const titleEl = document.getElementById('customAlertTitle');
+
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+        modal.style.display = 'flex';
+    }
+}
+
+function closeCustomAlert() {
+    const modal = document.getElementById('customAlertModal');
+    modal.style.display = 'none';
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    checkLogin();
+    loadMonsters();
+    initCharacterSheet();
+    setupAutoSave();
+    initCombatMap();
+});
