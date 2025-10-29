@@ -1,15 +1,49 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const axios = require('axios');
 const fs = require('fs').promises;
 const path = require('path');
+const multer = require('multer');
+const { MONSTER_THEMES, ENCOUNTER_THEMES } = require('./monster-themes');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 const PORT = 8347;
 const SRD_API_BASE = 'https://www.dnd5eapi.co/api';
 const CACHE_DIR = path.join(__dirname, 'cache');
 const MONSTERS_CACHE_FILE = path.join(CACHE_DIR, 'monsters-full.json');
 const IMAGES_DIR = path.join(__dirname, 'public', 'images', 'monsters');
+const AVATARS_DIR = path.join(__dirname, 'public', 'images', 'avatars');
 const ACCOUNTS_FILE = path.join(CACHE_DIR, 'accounts.json');
+
+// Configure multer for avatar uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, AVATARS_DIR);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: function (req, file, cb) {
+        const allowedTypes = /jpeg|jpg|png|gif|webp|svg/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed!'));
+        }
+    }
+});
 
 // Middleware
 app.use(express.json());
@@ -18,6 +52,32 @@ app.use('/cache', express.static('cache'));
 
 // In-memory cache
 let monstersCache = null;
+
+// Combat map sessions (rooms)
+const mapSessions = new Map(); // sessionId -> { tiles, walls, users: Set }
+
+// Generate unique session ID
+function generateSessionId() {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// Add theme tags to a monster
+function addMonsterTags(monster) {
+    const tags = MONSTER_THEMES[monster.index] || [];
+    return { ...monster, tags };
+}
+
+// Enrich all monsters with tags
+function enrichMonstersWithTags(monstersData) {
+    const enrichedMonsters = {};
+    for (const [index, monster] of Object.entries(monstersData.monsters)) {
+        enrichedMonsters[index] = addMonsterTags(monster);
+    }
+    return {
+        ...monstersData,
+        monsters: enrichedMonsters
+    };
+}
 
 // Download image from URL and save locally
 async function downloadImage(imageUrl, filename) {
@@ -39,6 +99,8 @@ async function loadMonstersCache() {
         try {
             const cacheData = await fs.readFile(MONSTERS_CACHE_FILE, 'utf-8');
             monstersCache = JSON.parse(cacheData);
+            // Enrich with tags
+            monstersCache = enrichMonstersWithTags(monstersCache);
             console.log(`✅ Loaded ${Object.keys(monstersCache.monsters).length} monsters from cache`);
             return;
         } catch (error) {
@@ -73,7 +135,7 @@ async function loadMonstersCache() {
                     }
                 }
 
-                monsters[m.index] = monsterData;
+                monsters[m.index] = addMonsterTags(monsterData);
                 count++;
 
                 if (count % 50 === 0) {
@@ -165,7 +227,9 @@ app.get('/api/monsters', async (req, res) => {
                 index: monster.index,
                 cr: monster.challenge_rating,
                 type: monster.type,
-                size: monster.size
+                size: monster.size,
+                imageUrl: monster.imageUrl,
+                tags: monster.tags || []
             });
         });
 
@@ -176,6 +240,11 @@ app.get('/api/monsters', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// API endpoint to get encounter themes
+app.get('/api/encounter-themes', (req, res) => {
+    res.json(ENCOUNTER_THEMES);
 });
 
 // Account Management API Endpoints
@@ -399,6 +468,50 @@ app.get('/api/get-encounters', async (req, res) => {
     }
 });
 
+// Upload avatar image
+app.post('/api/upload-avatar', upload.single('avatar'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const avatarPath = `/images/avatars/${req.file.filename}`;
+        res.json({
+            success: true,
+            avatarUrl: avatarPath,
+            filename: req.file.filename
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get list of monster images
+app.get('/api/monster-images', async (req, res) => {
+    try {
+        const files = await fs.readdir(IMAGES_DIR);
+        const imageFiles = files.filter(file =>
+            /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
+        );
+        res.json({ images: imageFiles });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get list of avatar images
+app.get('/api/avatar-images', async (req, res) => {
+    try {
+        const files = await fs.readdir(AVATARS_DIR);
+        const imageFiles = files.filter(file =>
+            /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
+        );
+        res.json({ images: imageFiles });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Ensure Admin account exists
 async function ensureAdminAccount() {
     try {
@@ -432,14 +545,152 @@ async function ensureAdminAccount() {
     }
 }
 
+// Socket.IO event handlers
+io.on('connection', (socket) => {
+    console.log(`User connected: ${socket.id}`);
+    let currentSession = null;
+
+    // Create new map session
+    socket.on('createSession', (callback) => {
+        const sessionId = generateSessionId();
+        mapSessions.set(sessionId, {
+            tiles: [],
+            walls: [],
+            users: new Set([socket.id])
+        });
+        currentSession = sessionId;
+        socket.join(sessionId);
+        console.log(`Session created: ${sessionId}`);
+        callback({ sessionId });
+    });
+
+    // Join existing map session
+    socket.on('joinSession', (sessionId, callback) => {
+        const session = mapSessions.get(sessionId);
+        if (session) {
+            session.users.add(socket.id);
+            currentSession = sessionId;
+            socket.join(sessionId);
+            console.log(`User ${socket.id} joined session: ${sessionId}`);
+            callback({
+                success: true,
+                tiles: session.tiles,
+                walls: session.walls
+            });
+            // Notify others that someone joined
+            socket.to(sessionId).emit('userJoined', { userId: socket.id });
+        } else {
+            callback({ success: false, error: 'Session not found' });
+        }
+    });
+
+    // Sync tile placement
+    socket.on('addTile', (data) => {
+        if (currentSession) {
+            const session = mapSessions.get(currentSession);
+            if (session) {
+                session.tiles.push(data.tile);
+                socket.to(currentSession).emit('tileAdded', data);
+            }
+        }
+    });
+
+    // Sync tile removal
+    socket.on('removeTile', (data) => {
+        if (currentSession) {
+            const session = mapSessions.get(currentSession);
+            if (session) {
+                session.tiles = session.tiles.filter(t => t.id !== data.tileId);
+                socket.to(currentSession).emit('tileRemoved', data);
+            }
+        }
+    });
+
+    // Sync tile update
+    socket.on('updateTile', (data) => {
+        if (currentSession) {
+            const session = mapSessions.get(currentSession);
+            if (session) {
+                const index = session.tiles.findIndex(t => t.id === data.tile.id);
+                if (index !== -1) {
+                    session.tiles[index] = data.tile;
+                }
+                socket.to(currentSession).emit('tileUpdated', data);
+            }
+        }
+    });
+
+    // Sync walls
+    socket.on('addWall', (data) => {
+        if (currentSession) {
+            const session = mapSessions.get(currentSession);
+            if (session) {
+                if (!session.walls.includes(data.wallKey)) {
+                    session.walls.push(data.wallKey);
+                }
+                socket.to(currentSession).emit('wallAdded', data);
+            }
+        }
+    });
+
+    socket.on('removeWall', (data) => {
+        if (currentSession) {
+            const session = mapSessions.get(currentSession);
+            if (session) {
+                session.walls = session.walls.filter(w => w !== data.wallKey);
+                socket.to(currentSession).emit('wallRemoved', data);
+            }
+        }
+    });
+
+    socket.on('clearWalls', () => {
+        if (currentSession) {
+            const session = mapSessions.get(currentSession);
+            if (session) {
+                session.walls = [];
+                socket.to(currentSession).emit('wallsCleared');
+            }
+        }
+    });
+
+    socket.on('clearTiles', () => {
+        if (currentSession) {
+            const session = mapSessions.get(currentSession);
+            if (session) {
+                session.tiles = [];
+                socket.to(currentSession).emit('tilesCleared');
+            }
+        }
+    });
+
+    // Handle disconnection
+    socket.on('disconnect', () => {
+        console.log(`User disconnected: ${socket.id}`);
+        if (currentSession) {
+            const session = mapSessions.get(currentSession);
+            if (session) {
+                session.users.delete(socket.id);
+                // Clean up empty sessions
+                if (session.users.size === 0) {
+                    mapSessions.delete(currentSession);
+                    console.log(`Session ${currentSession} deleted (no users)`);
+                } else {
+                    socket.to(currentSession).emit('userLeft', { userId: socket.id });
+                }
+            }
+        }
+    });
+});
+
 // Start server
 async function startServer() {
     await loadMonstersCache();
     await ensureAdminAccount();
-    app.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, '0.0.0.0', () => {
         console.log(`\n🐉 D&D Monster Viewer running at http://localhost:${PORT}`);
         console.log(`📚 Cached ${monstersCache.metadata.total_monsters} monsters`);
-        console.log(`📜 License: ${monstersCache.metadata.license}\n`);
+        console.log(`📜 License: ${monstersCache.metadata.license}`);
+        console.log(`🌐 WebSocket server ready for multiplayer maps\n`);
     });
 }
 
