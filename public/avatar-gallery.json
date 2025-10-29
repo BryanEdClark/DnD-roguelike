@@ -1,0 +1,508 @@
+{
+  "human": {
+    "name": "Human",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_human1.jpg",
+          "style": "custom",
+          "description": "human-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_human2.jpg",
+          "style": "custom",
+          "description": "human-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_human3.jpg",
+          "style": "custom",
+          "description": "human-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_human1.jpg",
+          "style": "custom",
+          "description": "human-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_human2.jpg",
+          "style": "custom",
+          "description": "human-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_human3.jpg",
+          "style": "custom",
+          "description": "human-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "elf": {
+    "name": "Elf",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_elf1.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_elf2.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_elf3.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_elf1.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_elf2.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_elf3.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "dwarf": {
+    "name": "Dwarf",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_dwarf1.jpg",
+          "style": "custom",
+          "description": "dwarf-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_dwarf2.jpg",
+          "style": "custom",
+          "description": "dwarf-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_dwarf3.jpg",
+          "style": "custom",
+          "description": "dwarf-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_dwarf1.jpg",
+          "style": "custom",
+          "description": "dwarf-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_dwarf2.jpg",
+          "style": "custom",
+          "description": "dwarf-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_dwarf3.jpg",
+          "style": "custom",
+          "description": "dwarf-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "halfling": {
+    "name": "Halfling",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_gnome1.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_gnome2.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_gnome3.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_gnome1.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_gnome2.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_gnome3.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "dragonborn": {
+    "name": "Dragonborn",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_dragonborn1.jpg",
+          "style": "custom",
+          "description": "dragonborn-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_dragonborn2.jpg",
+          "style": "custom",
+          "description": "dragonborn-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_dragonborn3.jpg",
+          "style": "custom",
+          "description": "dragonborn-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_dragonborn1.jpg",
+          "style": "custom",
+          "description": "dragonborn-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_dragonborn2.jpg",
+          "style": "custom",
+          "description": "dragonborn-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_dragonborn3.jpg",
+          "style": "custom",
+          "description": "dragonborn-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "gnome": {
+    "name": "Gnome",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_gnome1.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_gnome2.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_gnome3.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_gnome1.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_gnome2.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_gnome3.jpg",
+          "style": "custom",
+          "description": "gnome-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "half-elf": {
+    "name": "Half-Elf",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_elf1.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_elf2.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_elf3.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_elf1.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_elf2.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_elf3.jpg",
+          "style": "custom",
+          "description": "elf-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "half-orc": {
+    "name": "Half-Orc",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_orc1.jpg",
+          "style": "custom",
+          "description": "orc-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_orc2.jpg",
+          "style": "custom",
+          "description": "orc-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_orc3.jpg",
+          "style": "custom",
+          "description": "orc-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_orc1.jpg",
+          "style": "custom",
+          "description": "orc-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_orc2.jpg",
+          "style": "custom",
+          "description": "orc-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_orc3.jpg",
+          "style": "custom",
+          "description": "orc-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "tiefling": {
+    "name": "Tiefling",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_tiefling1.jpg",
+          "style": "custom",
+          "description": "tiefling-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_tiefling2.jpg",
+          "style": "custom",
+          "description": "tiefling-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_tiefling3.jpg",
+          "style": "custom",
+          "description": "tiefling-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_tiefling1.jpg",
+          "style": "custom",
+          "description": "tiefling-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_tiefling2.jpg",
+          "style": "custom",
+          "description": "tiefling-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_tiefling3.jpg",
+          "style": "custom",
+          "description": "tiefling-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "aasimar": {
+    "name": "Aasimar",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_aasimar1.jpg",
+          "style": "custom",
+          "description": "aasimar-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_aasimar2.jpg",
+          "style": "custom",
+          "description": "aasimar-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_aasimar3.jpg",
+          "style": "custom",
+          "description": "aasimar-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_aasimar1.jpg",
+          "style": "custom",
+          "description": "aasimar-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_aasimar2.jpg",
+          "style": "custom",
+          "description": "aasimar-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_aasimar3.jpg",
+          "style": "custom",
+          "description": "aasimar-portrait"
+        }
+      ],
+      "other": []
+    }
+  },
+  "goliath": {
+    "name": "Goliath",
+    "genders": {
+      "male": [
+        {
+          "id": "01",
+          "path": "/images/avatars/male_goliath1.jpg",
+          "style": "custom",
+          "description": "goliath-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/male_goliath2.jpg",
+          "style": "custom",
+          "description": "goliath-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/male_goliath3.jpg",
+          "style": "custom",
+          "description": "goliath-portrait"
+        }
+      ],
+      "female": [
+        {
+          "id": "01",
+          "path": "/images/avatars/female_goliath1.jpg",
+          "style": "custom",
+          "description": "goliath-portrait"
+        },
+        {
+          "id": "02",
+          "path": "/images/avatars/female_goliath2.jpg",
+          "style": "custom",
+          "description": "goliath-portrait"
+        },
+        {
+          "id": "03",
+          "path": "/images/avatars/female_goliath3.jpg",
+          "style": "custom",
+          "description": "goliath-portrait"
+        }
+      ],
+      "other": []
+    }
+  }
+}

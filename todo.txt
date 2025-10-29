@@ -1,10 +1,10 @@
-campaign characters arent showing feats, spells, inventory, equipment
-update spells if the character automatically learns and prepares spells from a table at that level ex draconic sorcerer
-group monsters by themes to create themed encounters
-	Do  it based on location? (ex. Haunted Manor, Burning plains, foggy mountains)
-Player monster manual - just images so as to not meta game
 interactable battle map
-multi class support
+	have half wall and full wall
+	ability to save map
+	ability to upload an image with a x/y tile count and place useable tiles over that image
+	LOS rendering for players - have anything in their vision render bright, darken anything they have seen before but is not in their LoS, dont allow them to see updates to the map for anything that isnt in their LoS
+	if an icon was outside their LoS and comes into it have the grayed icon disappear since they now know the location of the icon, LoS should be 180 degrees fom the location they choose to face, walls should block it, their vision should extend the entire board length as long as its unobstructed
+full combat abilities from combat map (including counter updates)
 cast spells from character sheet?
 reset just spell slots button
 create custom monster
@@ -14,6 +14,7 @@ combat options ex. got hit for x damage and have it automatically deduct hp and 
 roguelike arena
 generate a random dungeon?
 have it be full touch screen interactable
+multi class support
 
 add it as an app?
 
